@@ -8,6 +8,9 @@ verify_ssl = true
 [packages]
 pandas = "*"
 google-cloud-bigquery = "*"
+gsutil = "*"
+google-cloud-storage = "*"
+cmappy = "*"
 
 [requires]
 python_version = "3.7"

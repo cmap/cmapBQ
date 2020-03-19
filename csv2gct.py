@@ -32,9 +32,8 @@ def parse_args(argv):
 ### Main functionality
 def pivot_CSV(csv_path, args):
     data = pd.read_csv(csv_path)
-    data = data.loc['rid', 'cid', 'value']
+    data = data.loc[:, ['rid', 'cid', 'value']]
     gct_df = data.pivot(index='rid', columns='cid', values='value')
-
     return gct_df
 
 ### Output code: To be moved to a class in the future
@@ -51,6 +50,8 @@ def write_status(success, out, exception=""):
         with open(os.path.join(out, 'SUCCESS.txt'), 'w') as file:
             file.write("Finished on {}\n".format(datetime.now().strftime('%c')))
     else:
+        print(str(exception))
+        print(traceback.format_exc())
         print("Output and stack traced saved to {}".format(out))
         with open(os.path.join(out, 'FAILURE.txt'), 'w') as file:
             file.write(str(exception))
@@ -86,7 +87,8 @@ def main(argv):
     else:
         out_file = args.outfile
 
-    out_file = os.path.join(out_path, out_file)
+    file_name = os.path.basename(out_file)
+    out_file = os.path.join(out_path, file_name)
     try:
         data_df = pivot_CSV(csv_path, args)
 
