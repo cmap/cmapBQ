@@ -3,6 +3,13 @@ from datetime import datetime
 
 class SigTool:
 
+    def write_args(args, out_path):
+        options = vars(args)
+        with open(os.path.join(out_path, 'config.txt'), 'w+') as f:
+            for option in options:
+                f.write("{}: {}\n".format(option, options[option]))
+                print("{}: {}".format(option, options[option]))
+
     def write_status(success, out, exception=""):
         if success:
             print("Successfully writted output to {}".format(out))

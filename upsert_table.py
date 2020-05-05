@@ -105,7 +105,7 @@ def upsert_table(from_table, to_table, args):
 
     rpt = {'num_inserted': [num_insert], 'num_updated': [num_update]}
     print("{} rows added to {}".format(num_insert, to_table))
-    print("{} rows matched and updated to {}".format(num_update, from_table))
+    print("{} rows matched and updated to {}".format(num_update, to_table))
     rpt = pd.DataFrame(data=rpt, columns=['num_inserted', 'num_updated'])
     return rpt
 

@@ -59,6 +59,7 @@ def run_validation(gct_file, table, args):
     col_meta = parse(gct_file, col_meta_only=True)
     row_meta = parse(gct_file, row_meta_only=True)
 
+    nsampl = min(len(col_meta), nsampl)
     if args.sig_ids == "" or not os.path.exists(args.sig_ids):
         print ("Randomly sampling {} sig ids".format(nsampl))
         col_idx = random.sample(range(0,len(col_meta)), nsampl)
