@@ -104,7 +104,7 @@ def sumbit_job_load(file_list, table_id, args):
         print("Done")
     elif args.append is False:      #if replace is true, append is ignored
         if table_exist(client, table_id, args):
-            raise api_exception.Conflict("CONFLICT: Table `{}` exists. To append use --append flag")
+            raise api_exception.Conflict("CONFLICT: Table `{}` exists. To append use --append flag".format(table_id))
 
     for filename in file_list:
         with open(filename, "rb") as source_file:
@@ -169,11 +169,9 @@ def mk_out_dir(path, toolname, create_subdir=True):
     else:
         return path
 
-
-if __name__ == '__main__':
-    #parse args
+def main(argv=None):
     t_start = time.time()
-    args = parse_args(sys.argv[1:])
+    args = parse_args(argv)
 
     out_path = mk_out_dir(args.out, "upload_parquet", create_subdir=args.create_subdir)
     write_args(args, out_path)
@@ -207,3 +205,7 @@ if __name__ == '__main__':
     print("-------------------")
     print("-------{}-------".format(t_end - t_start))
     print("-------------------")
+
+
+if __name__ == '__main__':
+    main(sys.argv[1:])

@@ -65,10 +65,13 @@ def write_success(success):
     if success:
         with open('SUCCESS.txt', 'w+') as file:
             file.write()
-if __name__ == '__main__':
-    args = parse_args(sys.argv[1:])
+
+def main(argv=None):
+    args = parse_args(argv)
     if args.key is not None:
         os.environ["GOOGLE_APPLICATION_CREDENTIALS"] = args.key
-
     result = diff_table(args.table1, args.table2, args)
+
+if __name__ == '__main__':
+    main(sys.argv[1:])
 

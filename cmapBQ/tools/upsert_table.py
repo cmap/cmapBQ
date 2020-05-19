@@ -142,9 +142,8 @@ def mk_out_dir(path, toolname, create_subdir=True):
         return path
 
 
-
-if __name__ == '__main__':
-    args = parse_args(sys.argv[1:])
+def main(argv = None):
+    args = parse_args(argv)
     if args.key is not None:
         os.environ["GOOGLE_APPLICATION_CREDENTIALS"] = args.key
 
@@ -163,3 +162,7 @@ if __name__ == '__main__':
     except Exception as e:
         write_status(False, out_path, exception=e)
         exit(1)
+
+
+if __name__ == '__main__':
+    main(sys.argv[1:])

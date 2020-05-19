@@ -1,14 +1,17 @@
-import glob, re, pytz, time
+import re
 import os, argparse, sys, traceback
 from datetime import datetime
-from datetime import timedelta
-from pathlib import Path
+import gzip, shutil
 
+import pandas as pd
 from google.cloud import bigquery
 from google.cloud import storage
-from google.api_core import exceptions as api_exception
 from google.auth import exceptions
-from cmapPy.set_io import grp
+from ..utils import write_args, write_status, mk_out_dir
+
+from cmapPy.pandasGEXpress.GCToo import GCToo
+from cmapPy.pandasGEXpress.write_gctx import write as write_gctx
+from cmapPy.pandasGEXpress.write_gct import write as write_gct
 
 
 def str2bool(v):
@@ -32,44 +35,24 @@ def parse_args(argv):
     parser.add_argument('-k', '--key', help="Path to service account key. \n Alternatively, set GOOGLE_APPLICATION_CREDENTIALS", default=None)
     parser.add_argument('-o', '--out', help="Output folder", default=os.getcwd())
     parser.add_argument('-c', '--create_subdir', help="Create Subdirectory", type=str2bool, default=True)
-    args = parser.parse_args(argv)
-    return args
+    parser.add_argument('-g', '--use_gctx', help="Use GCTX format, default is true", default=True)
 
-def write_args(args, out_path):
-    options = vars(args)
-    with open(os.path.join(out_path, 'config.txt'), 'w+') as f:
-        for option in options:
-            f.write("{}: {}\n".format(option, options[option]))
-            print("{}: {}".format(option, options[option]))
-
-
-def write_status(success, out, exception=""):
-    if success:
-        print("Successfully writted output to {}".format(out))
-        with open(os.path.join(out, 'SUCCESS.txt'), 'w') as file:
-            file.write("Finished on {}\n".format(datetime.now().strftime('%c')))
+    if argv is None:
+        parser.print_help()
+        sys.exit(1)
     else:
-        print(traceback.format_exc())
-        print("FAILURE: Output and stack traced saved to {}".format(out))
-        with open(os.path.join(out, 'FAILURE.txt'), 'w') as file:
-            file.write(str(exception))
-            file.write(traceback.format_exc())
-
-def mk_out_dir(path, toolname, create_subdir=True):
-    path = os.path.abspath(path)
-    if not os.path.exists(path):
-        os.makedirs(path)
-
-    if create_subdir:
-        timestamp = datetime.now().strftime('_%Y%m%d%H%M%S')
-        out_name = ''.join([toolname, timestamp])
-        out_path = os.path.join(path, out_name)
-        os.makedirs(out_path)
-        return out_path
-    else:
-        return path
+        args = parser.parse_args(argv)
+        return args
 
 def run_query(query, client, args):
+    """
+    Runs BigQuery queryjob
+    :param query: Query to run as a string
+    :param client: BigQuery client object
+    :param args: additional args
+    :return: QueryJob object
+    """
+
     #Job config
     job_config = bigquery.QueryJobConfig()
     if args.destination_table is not None:
@@ -85,8 +68,16 @@ def run_query(query, client, args):
     return client.query(query, job_config=job_config)
 
 def export_table(query_job, client, args):
-    result_bucket = 'clue_queries'
+    """
 
+    :param query_job: QueryJob object from which to extract results
+    :param client: BigQuery Client Object
+    :param args: Additional Args. Noteworthy is storage_uri which is the location in GCS to extract table
+    :return: ExtractJob object
+    """
+    result_bucket = 'clue_queries'
+    res = query_job.result()
+    #print(res)
     if args.storage_uri is not None:
         storage_uri = args.storage_uri
     else:
@@ -103,11 +94,16 @@ def export_table(query_job, client, args):
         storage_uri,
         job_config=exjob_config)
 
-
+    extract_job.result()
     return extract_job
 
 def download_from_extract_job(extract_job, destination_path):
-    """Downloads a blob from the bucket."""
+    """
+        Downloads a blob from the ExtractJob
+    :param extract_job: Extract Job object
+    :param destination_path: Output path
+    :return: List of files
+    """
     # bucket_name = "your-bucket-name"
     # source_blob_name = "storage-object-name"
     # destination_file_name = "local/path/to/file"
@@ -121,22 +117,51 @@ def download_from_extract_job(extract_job, destination_path):
 
     filelist = []
     for blob in blobs:
-        fn = os.path.basename(blob.name)
+        fn = os.path.basename(blob.name) + '.gz'
         blob.download_to_filename(os.path.join(destination_path, fn))
-        filelist.append(fn)
+        filelist.append(os.path.join(destination_path, fn))
 
     return filelist
 
-def csv_gz_to_gctx(filepaths, args):
-    pass
+def gunzip_csv(filepaths, destination_path):
+    out_paths = []
+    for filename in filepaths:
+        assert filename.endswith('.gz'), "Can't unzip extension"
+        with gzip.open(filename, 'rb') as f_in:
+            outname = os.path.splitext(filename)[0] #remove .gz extension
+            out_paths.append(outname)
+            with open(outname, 'wb') as f_out:
+                shutil.copyfileobj(f_in, f_out)
+    return out_paths
 
-def csv_to_gctx(filepaths, args):
-    pass
+def csv_to_gctx(filepaths, outpath, args):
+    """
+        Convert list of csv files to gctx. CSVs must have 'rid', 'cid' and 'value' columns
+        No other columns or metadata is preserved.
+    :param filepaths: List of paths to CSVs
+    :param outpath: output directory of file
+    :param args: Additional args. Noteworthy is --use_gctx
+    :return:
+    """
+    li = []
+    for filename in filepaths:
+        df = pd.read_csv(filename, index_col=None, header=0)
+        li.append(df)
+    result = pd.concat(li, axis=0, ignore_index=True)
+    df = result[['rid', 'cid', 'value']]\
+            .pivot(index='rid', columns='cid', values='value')
+    gct = GCToo(df)
+    if args.use_gctx:
+        ofile = os.path.join(outpath,'result.gctx')
+        write_gctx(gct, ofile)
+    else:
+        ofile = os.path.join(outpath,'result.gct')
+        write_gct(gct, ofile)
 
+    return ofile
 
-if __name__ == '__main__':
-    args = parse_args(sys.argv[1:])
-
+def main(argv=None):
+    args = parse_args(argv)
     out_path = mk_out_dir(args.out, "queryBQ", create_subdir=args.create_subdir)
     write_args(args, out_path)
 
@@ -152,7 +177,11 @@ if __name__ == '__main__':
         #extract table to GCS
         extract_job = export_table(query_job, bigquery_client, args)
         #download from GCS
-        file_list = download_from_extract_job(extract_job, out_path)
+        csv_path = os.path.join(out_path, 'csv')
+        os.mkdir(csv_path)
+        file_list = download_from_extract_job(extract_job, csv_path)
+        file_list = gunzip_csv(file_list, csv_path)
+        csv_to_gctx(file_list, out_path, args)
 
         print ("result_destination: {}".format(extract_job.destination_uris[0]))
 
@@ -167,4 +196,5 @@ if __name__ == '__main__':
         exit(1)
 
 
-
+if __name__ == '__main__':
+    main(sys.argv[1:])

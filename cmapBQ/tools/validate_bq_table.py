@@ -140,9 +140,8 @@ def mk_out_dir(path, toolname, create_subdir=True):
     else:
         return path
 
-if __name__ == '__main__':
-    args = parse_args(sys.argv[1:])
-
+def main(args=None):
+    args = parse_args(args)
     out_path = mk_out_dir(args.out, "validate_BQ_table", create_subdir=args.create_subdir)
     write_args(args, out_path)
 
@@ -163,3 +162,7 @@ if __name__ == '__main__':
         write_status(False, out_path, exception=e)
         exit(1)
 
+
+
+if __name__ == '__main__':
+    main(sys.argv[1:])

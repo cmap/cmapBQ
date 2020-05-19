@@ -17,7 +17,7 @@ def str2bool(v):
     else:
         raise argparse.ArgumentTypeError('Boolean value expected.')
 
-def parse_args(argv):
+def parse_args(argv=None):
     parser = argparse.ArgumentParser()
     parser.add_argument('csv_file', help="input CSV file to convert to  GCT(x) file")
     parser.add_argument('-f', '--outfile', help="Output file of GCT(x) file", default="")
@@ -26,8 +26,12 @@ def parse_args(argv):
                             const=True, default=True)
     parser.add_argument('-g', '--use_gctx', help="Use GCTX file format", type=str2bool, nargs='?',
                             const=True, default=False)
-    args = parser.parse_args(argv)
-    return args
+    if argv is None:
+        parser.print_help()
+        sys.exit(1)
+    else:
+        args = parser.parse_args(argv)
+        return args
 
 ### Main functionality
 def pivot_CSV(csv_path, args):
