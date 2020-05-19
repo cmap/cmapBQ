@@ -19,7 +19,8 @@ def str2bool(v):
 
 def parse_args(argv=None):
     parser = argparse.ArgumentParser()
-    parser.add_argument('csv_file', help="input CSV file to convert to  GCT(x) file")
+    parser.add_argument('csv_file', help="input CSV file to convert to  GCT(x) file, "
+                                         "must contain rid, cid, value columns")
     parser.add_argument('-f', '--outfile', help="Output file of GCT(x) file", default="")
     parser.add_argument('-o', '--out', help="Output folder", default=os.getcwd())
     parser.add_argument('-c', '--create_subdir', help="Create Subdirectory", type=str2bool, nargs='?',
