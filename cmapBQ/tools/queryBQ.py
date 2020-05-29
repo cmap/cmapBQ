@@ -13,6 +13,7 @@ from cmapPy.pandasGEXpress.GCToo import GCToo
 from cmapPy.pandasGEXpress.write_gctx import write as write_gctx
 from cmapPy.pandasGEXpress.write_gct import write as write_gct
 
+from ..utils.file import  csv_to_gctx
 
 def str2bool(v):
     if isinstance(v, bool):
@@ -25,8 +26,8 @@ def str2bool(v):
         raise argparse.ArgumentTypeError('Boolean value expected.')
 
 
-def parse_args(argv):
-    parser = argparse.ArgumentParser()
+def parse_args(argv=None):
+    parser = argparse.ArgumentParser(description="Runs Query in BQ, downloads the results and convert results from CSV to GCT")
     parser.add_argument('-q', '--query', help="Source Table, rows that exist in both will this table's value")
     parser.add_argument('-d', '--destination_table', help="Destination Table in Bigquery to save results, if empty a temporary table will be used.",
                         default=None)
@@ -133,32 +134,6 @@ def gunzip_csv(filepaths, destination_path):
             with open(outname, 'wb') as f_out:
                 shutil.copyfileobj(f_in, f_out)
     return out_paths
-
-def csv_to_gctx(filepaths, outpath, args):
-    """
-        Convert list of csv files to gctx. CSVs must have 'rid', 'cid' and 'value' columns
-        No other columns or metadata is preserved.
-    :param filepaths: List of paths to CSVs
-    :param outpath: output directory of file
-    :param args: Additional args. Noteworthy is --use_gctx
-    :return:
-    """
-    li = []
-    for filename in filepaths:
-        df = pd.read_csv(filename, index_col=None, header=0)
-        li.append(df)
-    result = pd.concat(li, axis=0, ignore_index=True)
-    df = result[['rid', 'cid', 'value']]\
-            .pivot(index='rid', columns='cid', values='value')
-    gct = GCToo(df)
-    if args.use_gctx:
-        ofile = os.path.join(outpath,'result.gctx')
-        write_gctx(gct, ofile)
-    else:
-        ofile = os.path.join(outpath,'result.gct')
-        write_gct(gct, ofile)
-
-    return ofile
 
 def main(argv=None):
     args = parse_args(argv)
