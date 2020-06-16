@@ -131,7 +131,7 @@ def mk_out_dir(path, toolname, create_subdir=True):
 
 
 def main(argv):
-    args = parse_args(sys.argv[1:])
+    args = parse_args(argv)
     dspath = args.infile
 
     out_path = mk_out_dir(args.out, "gctx2parquet", create_subdir=args.create_subdir)
@@ -154,5 +154,6 @@ def main(argv):
 
 if __name__ == "__main__":
     start_time = time.time()
+    print(sys.argv)
     main(sys.argv[1:])
     print ("--- Total Time: {0} seconds ---".format(time.time() - start_time))
