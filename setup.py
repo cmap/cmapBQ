@@ -27,7 +27,7 @@ setup(
     use_scm_version={
         'local_scheme': 'dirty-tag',
         'write_to': 'cmapBQ/_version.py',
-        'fallback_version': '0.0.0',
+        'fallback_version': '0.1.0',
     },
     description="Toolkit for interacting with Google BigQuery and CMAP datasets",
     author='Anup Jonchhe',

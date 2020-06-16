@@ -8,7 +8,7 @@ ipython = "*"
 
 [packages]
 pandas = "*"
-google-cloud-bigquery = "*"
+google-cloud-bigquery = {extras = ["bqstorage", "pandas"],version = "*"}
 gsutil = "*"
 google-cloud-storage = "*"
 cmappy = "*"

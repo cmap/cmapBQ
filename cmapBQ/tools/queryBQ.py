@@ -7,13 +7,10 @@ import pandas as pd
 from google.cloud import bigquery
 from google.cloud import storage
 from google.auth import exceptions
-from ..utils import write_args, write_status, mk_out_dir
 
-from cmapPy.pandasGEXpress.GCToo import GCToo
-from cmapPy.pandasGEXpress.write_gctx import write as write_gctx
-from cmapPy.pandasGEXpress.write_gct import write as write_gct
-
-from ..utils.file import  csv_to_gctx
+from cmapBQ.utils import write_args, write_status, mk_out_dir
+from cmapBQ.query import run_query, export_table, download_from_extract_job
+from cmapBQ.utils.file import csv_to_gctx
 
 def str2bool(v):
     if isinstance(v, bool):
@@ -45,91 +42,24 @@ def parse_args(argv=None):
         args = parser.parse_args(argv)
         return args
 
-def run_query(query, client, args):
+
+def gunzip_csv(filepaths, destination_path=None):
     """
-    Runs BigQuery queryjob
-    :param query: Query to run as a string
-    :param client: BigQuery client object
-    :param args: additional args
-    :return: QueryJob object
+    Unzips list of CSVs
+    :param filepaths: Path of files with '.gz' extensions
+    :param destination_path: folder to place unzipped files. If None, places in input directory.
+    :return: List of outfile paths
     """
-
-    #Job config
-    job_config = bigquery.QueryJobConfig()
-    if args.destination_table is not None:
-        job_config.destination = args.destination_table
-    else:
-        timestamp_name = datetime.now().strftime('query_%Y%m%d%H%M%S')
-        project = "cmap-big-table"
-        dataset = "cmap_query"
-        dest_tbl = ".".join([project, dataset, timestamp_name])
-        job_config.destination = dest_tbl
-
-    job_config.create_disposition = 'CREATE_IF_NEEDED'
-    return client.query(query, job_config=job_config)
-
-def export_table(query_job, client, args):
-    """
-
-    :param query_job: QueryJob object from which to extract results
-    :param client: BigQuery Client Object
-    :param args: Additional Args. Noteworthy is storage_uri which is the location in GCS to extract table
-    :return: ExtractJob object
-    """
-    result_bucket = 'clue_queries'
-    res = query_job.result()
-    #print(res)
-    if args.storage_uri is not None:
-        storage_uri = args.storage_uri
-    else:
-        timestamp_name = datetime.now().strftime('query_%Y%m%d%H%M%S')
-        filename = ('result-*.csv')
-        storage_uri = "gs://{}/{}/{}".format(result_bucket, timestamp_name, filename)
-        args.storage_uri = storage_uri
-
-    exjob_config = bigquery.job.ExtractJobConfig(compression='GZIP')
-
-    table_ref = query_job.destination
-    extract_job = client.extract_table(
-        table_ref,
-        storage_uri,
-        job_config=exjob_config)
-
-    extract_job.result()
-    return extract_job
-
-def download_from_extract_job(extract_job, destination_path):
-    """
-        Downloads a blob from the ExtractJob
-    :param extract_job: Extract Job object
-    :param destination_path: Output path
-    :return: List of files
-    """
-    # bucket_name = "your-bucket-name"
-    # source_blob_name = "storage-object-name"
-    # destination_file_name = "local/path/to/file"
-
-    storage_client = storage.Client()
-
-    bucket = storage_client.bucket('clue_queries')
-    location = extract_job.destination_uris[0]
-    blob_prefix = re.findall("query_[0-9]+/", location)
-    blobs = [_ for _ in bucket.list_blobs(prefix=blob_prefix)]
-
-    filelist = []
-    for blob in blobs:
-        fn = os.path.basename(blob.name) + '.gz'
-        blob.download_to_filename(os.path.join(destination_path, fn))
-        filelist.append(os.path.join(destination_path, fn))
-
-    return filelist
-
-def gunzip_csv(filepaths, destination_path):
     out_paths = []
     for filename in filepaths:
         assert filename.endswith('.gz'), "Can't unzip extension"
         with gzip.open(filename, 'rb') as f_in:
-            outname = os.path.splitext(filename)[0] #remove .gz extension
+            if destination_path is not None:
+                no_ext = os.path.splitext(filename)[0]
+                outname = os.path.basename(no_ext) #Just file name w/o ext
+                outname = os.path.join(destination_path, outname) #path
+            else:
+                outname = os.path.splitext(filename)[0] #remove .gz extension
             out_paths.append(outname)
             with open(outname, 'wb') as f_out:
                 shutil.copyfileobj(f_in, f_out)
@@ -137,18 +67,18 @@ def gunzip_csv(filepaths, destination_path):
 
 def main(argv=None):
     args = parse_args(argv)
+
     out_path = mk_out_dir(args.out, "queryBQ", create_subdir=args.create_subdir)
     write_args(args, out_path)
 
     if args.key is not None:
         os.environ["GOOGLE_APPLICATION_CREDENTIALS"] = args.key
 
-    bigquery_client = bigquery.Client()
-    storage_client = storage.Client()
-
     try:
+        bigquery_client = bigquery.Client()
+
         #run query
-        query_job = run_query(args.query, bigquery_client, args)
+        query_job = run_query(args.query, bigquery_client, args.destination_table)
         #extract table to GCS
         extract_job = export_table(query_job, bigquery_client, args)
         #download from GCS
