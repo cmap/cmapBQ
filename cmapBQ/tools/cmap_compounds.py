@@ -1,4 +1,4 @@
-import os
+import os, sys
 import argparse
 
 import pandas as pd
@@ -22,8 +22,12 @@ def parse_args(argv):
     tool_group.add_argument('-o', '--out', help="Output folder", default=os.getcwd())
     tool_group.add_argument('-c', '--create_subdir', help="Create Subdirectory", type=str2bool, default=True)
 
-    args = parser.parse_args(argv)
-    return args
+    if argv:
+        args = parser.parse_args(argv)
+        return args
+    else:
+        parser.print_help()
+        sys.exit(1)
 
 def main(argv):
     args = parse_args(argv)
@@ -39,7 +43,8 @@ def main(argv):
         result = cmap_compounds(bq_client, pert_id=args.pert_id, cmap_name=args.cmap_name, moa=args.moa,
                                 target=args.target, compound_aliases=args.compound_aliases)
 
-        pd.to_csv(os.path.join(out_path, args.filename), sep='\t')
+
+        result.to_csv(os.path.join(out_path, args.filename), sep='\t')
 
         write_status(True, out_path)
     except exceptions.DefaultCredentialsError as cred_error:

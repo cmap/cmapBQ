@@ -7,25 +7,29 @@ import pandas as pd
 from google.cloud import bigquery
 from google.cloud import storage
 from google.auth import exceptions
+
+from cmapPy.set_io.grp import read as parse_grp
 from .utils import write_args, write_status, mk_out_dir
 
-def parse_condition(arg):
+def parse_condition(arg, sep=','):
     """
     Parse argument for pathname, string or list. If file path exists reads GRP or TXT file.
+    Non-path filenames are tokenized by specified delimiter, default is ','.
     Returns list
 
     :param arg: Takes in pathname, string, or list.
+    :param sep: Delimiter to separate elements in string into list. Default is ','
     :return: list
     """
     if isinstance(arg, str):
         if os.path.isfile(arg):
             arg = parse_grp(arg)
         else:
-            arg = [arg]
+            arg = arg.split(sep=sep)
     return list(arg)
 
 def cmap_compounds(client, pert_id=None, cmap_name=None, moa=None, target=None,
-                   compound_aliases=None):
+                   compound_aliases=None, limit=None):
     """
     Query compound info table for various field by providing lists of compounds, moa, targets, etc.
     'OR' operator used for multiple conditions to be maximally inclusive.
@@ -60,9 +64,20 @@ def cmap_compounds(client, pert_id=None, cmap_name=None, moa=None, target=None,
         CONDITIONS.append("compound_aliases in UNNEST({})".format(list(compound_aliases)))
 
     WHERE = WHERE +  " OR ".join(CONDITIONS)
+    if limit:
+        assert isinstance(limit, int), "Limit argument must be an integer"
+        WHERE = WHERE + " LIMIT {}".format(limit)
     query = " ".join([SELECT, FROM, WHERE])
 
     return run_query(query, client).result().to_dataframe()
+
+def cmap_sig(client, args):
+    ...
+    pass
+
+def cmap_matrix(client, table, rids=None, cid=None, project=None, dataset=None):
+    ...
+
 
 def run_query(query, client, destination_table=None):
     """
