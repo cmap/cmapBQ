@@ -10,6 +10,7 @@ from google.auth import exceptions
 
 from cmapPy.set_io.grp import read as parse_grp
 from .utils import write_args, write_status, mk_out_dir
+from cmapPy.set_io.grp import read as parse_grp
 
 def parse_condition(arg, sep=','):
     """
@@ -78,6 +79,22 @@ def cmap_sig(client, args):
 def cmap_matrix(client, table, rids=None, cid=None, project=None, dataset=None):
     ...
 
+def list_cmap_moas(client):
+    """
+
+    :param client: BigQuery Client
+    :return:
+    """
+    QUERY = "SELECT DISTINCT moa from cmap-big-table.broad_cmap_lincs_data.compoundinfo"
+    return run_query(QUERY, client).result().to_dataframe()
+
+def list_cmap_targets(client):
+    QUERY = "SELECT DISTINCT target from cmap-big-table.broad_cmap_lincs_data.compoundinfo"
+    return run_query(QUERY, client).result().to_dataframe()
+
+def list_cmap_compounds(client):
+    QUERY = "SELECT DISTINCT cmap_name from cmap-big-table.broad_cmap_lincs_data.compoundinfo"
+    return run_query(QUERY, client).result().to_dataframe()
 
 def run_query(query, client, destination_table=None):
     """
