@@ -8,6 +8,7 @@ from google.cloud import bigquery
 from google.cloud import storage
 from google.auth import exceptions
 from .utils import write_args, write_status, mk_out_dir
+from cmapPy.set_io.grp import read as parse_grp
 
 def parse_condition(arg):
     """
@@ -63,6 +64,23 @@ def cmap_compounds(client, pert_id=None, cmap_name=None, moa=None, target=None,
     query = " ".join([SELECT, FROM, WHERE])
 
     return run_query(query, client).result().to_dataframe()
+
+def list_cmap_moas(client):
+    """
+
+    :param client: BigQuery Client
+    :return:
+    """
+    QUERY = "SELECT DISTINCT moa from cmap-big-table.broad_cmap_lincs_data.compoundinfo"
+    return run_query(QUERY, client).result().to_dataframe()
+
+def list_cmap_targets(client):
+    QUERY = "SELECT DISTINCT target from cmap-big-table.broad_cmap_lincs_data.compoundinfo"
+    return run_query(QUERY, client).result().to_dataframe()
+
+def list_cmap_compounds(client):
+    QUERY = "SELECT DISTINCT cmap_name from cmap-big-table.broad_cmap_lincs_data.compoundinfo"
+    return run_query(QUERY, client).result().to_dataframe()
 
 def run_query(query, client, destination_table=None):
     """
