@@ -39,7 +39,8 @@ def main(argv):
         result = cmap_compounds(bq_client, pert_id=args.pert_id, cmap_name=args.cmap_name, moa=args.moa,
                                 target=args.target, compound_aliases=args.compound_aliases)
 
-        pd.to_csv(os.path.join(out_path, args.filename), sep='\t')
+
+        result.to_csv(os.path.join(out_path, args.filename), sep='\t', index=False)
 
         write_status(True, out_path)
     except exceptions.DefaultCredentialsError as cred_error:
