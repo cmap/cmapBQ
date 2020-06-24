@@ -3,6 +3,8 @@ import argparse
 import traceback
 from datetime import datetime
 
+from cmapPy.pandasGEXpress.GCToo import GCToo
+
 def str2bool(v):
     if isinstance(v, bool):
        return v
@@ -44,3 +46,16 @@ def mk_out_dir(path, toolname, create_subdir=True):
         return out_path
     else:
         return path
+
+def long_to_gctx(df):
+    """
+        Converts long csv table to GCToo Object. Dataframe must have 'rid', 'cid' and 'value' columns
+        No other columns or metadata is preserved.
+    :param df: Long form pandas DataFrame
+    :return: GCToo object
+    """
+    df = df[['rid', 'cid', 'value']]\
+            .pivot(index='rid', columns='cid', values='value')
+    gct = GCToo(df)
+    return gct
+

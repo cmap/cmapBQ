@@ -9,7 +9,7 @@ from google.cloud import storage
 from google.auth import exceptions
 
 from cmapPy.set_io.grp import read as parse_grp
-from .utils import write_args, write_status, mk_out_dir
+from .utils import write_args, write_status, mk_out_dir, long_to_gctx
 from cmapPy.set_io.grp import read as parse_grp
 
 def parse_condition(arg, sep=','):
@@ -43,9 +43,9 @@ def cmap_compounds(client, pert_id=None, cmap_name=None, moa=None, target=None,
     :param compound_aliases: List of compound aliases
     :return: Pandas Dataframe matching queries
     """
-    SELECT = 'SELECT *'
-    FROM = 'FROM broad_cmap_lincs_data.compoundinfo'
-    WHERE = 'WHERE '
+    SELECT = "SELECT *"
+    FROM = "FROM broad_cmap_lincs_data.compoundinfo"
+    WHERE = ""
 
     CONDITIONS = []
     if pert_id:
@@ -64,7 +64,11 @@ def cmap_compounds(client, pert_id=None, cmap_name=None, moa=None, target=None,
         compound_aliases = parse_condition(compound_aliases)
         CONDITIONS.append("compound_aliases in UNNEST({})".format(list(compound_aliases)))
 
-    WHERE = WHERE +  " OR ".join(CONDITIONS)
+    if CONDITIONS:
+        WHERE = "WHERE" +  " OR ".join(CONDITIONS)
+    else:
+        WHERE = ""
+
     if limit:
         assert isinstance(limit, int), "Limit argument must be an integer"
         WHERE = WHERE + " LIMIT {}".format(limit)
@@ -76,8 +80,27 @@ def cmap_sig(client, args):
     ...
     pass
 
-def cmap_matrix(client, table, rids=None, cid=None, project=None, dataset=None):
-    ...
+def cmap_matrix(client, table, rids=None, cids=None, project=None, dataset=None):
+    table_id = '.'.join([project, dataset, table])
+
+    SELECT = "SELECT cid, rid, value"
+    #make table address
+    FROM = "FROM `{}`".format(table_id)
+    WHERE = ""
+
+    QUERY = " ".join([SELECT, FROM, WHERE])
+
+    print(QUERY)
+    qjob = run_query(QUERY, client)
+
+    print("Running query...")
+    df_long = qjob.result().to_dataframe()
+
+    print("Done.")
+    print("Converting to GCToo object...")
+    gctoo = long_to_gctx(df_long)
+    return gctoo
+
 
 def list_cmap_moas(client):
     """

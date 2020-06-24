@@ -86,7 +86,7 @@ def main(argv=None):
         os.mkdir(csv_path)
         file_list = download_from_extract_job(extract_job, csv_path)
         file_list = gunzip_csv(file_list, csv_path)
-        csv_to_gctx(file_list, out_path, args)
+        csv_to_gctx(file_list, out_path, use_gctx=args.use_gctx)
 
         print ("result_destination: {}".format(extract_job.destination_uris[0]))
 
