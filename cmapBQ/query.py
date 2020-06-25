@@ -81,7 +81,10 @@ def cmap_sig(client, args):
     pass
 
 def cmap_matrix(client, table, rids=None, cids=None, project=None, dataset=None):
-    table_id = '.'.join([project, dataset, table])
+    if (project is not None) and (dataset is not None):
+        table_id = '.'.join([project, dataset, table])
+    else:
+        table_id = table
 
     SELECT = "SELECT cid, rid, value"
     #make table address

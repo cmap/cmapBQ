@@ -9,10 +9,12 @@ from cmapBQ.utils import write_args, write_status, mk_out_dir, str2bool
 from cmapBQ.query import cmap_matrix
 from cmapPy.pandasGEXpress.write_gctx import write as write_gctx
 from cmapPy.pandasGEXpress.write_gct import write as write_gct
+
 toolname = "cmap_matrix"
+description = "Download table hosted on BiqQuery as a GCTX"
 
 def parse_args(argv):
-    parser = argparse.ArgumentParser(description="Query Compound Info table for MoA, Target, BRD information")
+    parser = argparse.ArgumentParser(prog="cmapBQ {}".format(toolname), description=description)
     parser.add_argument('--table', help="Table to query", default=None)
     parser.add_argument('--cids', help="List of sig_ids to extract", default=None)
     parser.add_argument('--rids', help="List of moas to query", default=None)
@@ -23,6 +25,8 @@ def parse_args(argv):
     tool_group.add_argument('-k', '--key', help="Path to service account key. \n Alternatively, set GOOGLE_APPLICATION_CREDENTIALS", default=None)
     tool_group.add_argument('-o', '--out', help="Output folder", default=os.getcwd())
     tool_group.add_argument('-c', '--create_subdir', help="Create Subdirectory", type=str2bool, default=True)
+    tool_group.add_argument('-g', '--use_gctx', help="Use GCTX format, default is true", default=True)
+
 
     if argv:
         args = parser.parse_args(argv)
