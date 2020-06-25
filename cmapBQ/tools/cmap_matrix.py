@@ -16,8 +16,8 @@ description = "Download table hosted on BiqQuery as a GCTX"
 def parse_args(argv):
     parser = argparse.ArgumentParser(prog="cmapBQ {}".format(toolname), description=description)
     parser.add_argument('--table', help="Table to query", default=None)
-    parser.add_argument('--cids', help="List of sig_ids to extract", default=None)
-    parser.add_argument('--rids', help="List of moas to query", default=None)
+    parser.add_argument('--cid', help="List of sig_ids to extract", default=None)
+    parser.add_argument('--rid', help="List of moas to query", default=None)
 
 
     tool_group = parser.add_argument_group('Tool options')
@@ -46,7 +46,7 @@ def main(argv):
     try:
         bq_client = bigquery.Client()
 
-        gct = cmap_matrix(bq_client, table=args.table, rids=args.rids, cids=args.cids)
+        gct = cmap_matrix(bq_client, table=args.table, rid=args.rid, cid=args.cid)
 
         if args.use_gctx:
             ofile = os.path.join(out_path,'result.gctx')

@@ -80,7 +80,7 @@ def cmap_sig(client, args):
     ...
     pass
 
-def cmap_matrix(client, table, rids=None, cids=None, project=None, dataset=None):
+def cmap_matrix(client, table, rid=None, cid=None, project=None, dataset=None):
     if (project is not None) and (dataset is not None):
         table_id = '.'.join([project, dataset, table])
     else:
@@ -92,11 +92,11 @@ def cmap_matrix(client, table, rids=None, cids=None, project=None, dataset=None)
     WHERE = ""
 
     CONDITIONS = []
-    if rids:
-        rids = parse_condition(rids)
+    if rid:
+        rids = parse_condition(rid)
         CONDITIONS.append("rid in UNNEST({})".format(list(rids)))
-    if cids:
-        cids = parse_condition(cids)
+    if cid:
+        cids = parse_condition(cid)
         CONDITIONS.append("cid in UNNEST({})".format(list(cids)))
 
     if CONDITIONS:
