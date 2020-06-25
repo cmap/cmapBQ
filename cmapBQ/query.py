@@ -7,25 +7,30 @@ import pandas as pd
 from google.cloud import bigquery
 from google.cloud import storage
 from google.auth import exceptions
-from .utils import write_args, write_status, mk_out_dir
 
-def parse_condition(arg):
+from cmapPy.set_io.grp import read as parse_grp
+from .utils import write_args, write_status, mk_out_dir, long_to_gctx
+from cmapPy.set_io.grp import read as parse_grp
+
+def parse_condition(arg, sep=','):
     """
     Parse argument for pathname, string or list. If file path exists reads GRP or TXT file.
+    Non-path filenames are tokenized by specified delimiter, default is ','.
     Returns list
 
     :param arg: Takes in pathname, string, or list.
+    :param sep: Delimiter to separate elements in string into list. Default is ','
     :return: list
     """
     if isinstance(arg, str):
         if os.path.isfile(arg):
             arg = parse_grp(arg)
         else:
-            arg = [arg]
+            arg = arg.split(sep=sep)
     return list(arg)
 
 def cmap_compounds(client, pert_id=None, cmap_name=None, moa=None, target=None,
-                   compound_aliases=None):
+                   compound_aliases=None, limit=None):
     """
     Query compound info table for various field by providing lists of compounds, moa, targets, etc.
     'OR' operator used for multiple conditions to be maximally inclusive.
@@ -38,9 +43,9 @@ def cmap_compounds(client, pert_id=None, cmap_name=None, moa=None, target=None,
     :param compound_aliases: List of compound aliases
     :return: Pandas Dataframe matching queries
     """
-    SELECT = 'SELECT *'
-    FROM = 'FROM broad_cmap_lincs_data.compoundinfo'
-    WHERE = 'WHERE '
+    SELECT = "SELECT *"
+    FROM = "FROM broad_cmap_lincs_data.compoundinfo"
+    WHERE = ""
 
     CONDITIONS = []
     if pert_id:
@@ -59,10 +64,63 @@ def cmap_compounds(client, pert_id=None, cmap_name=None, moa=None, target=None,
         compound_aliases = parse_condition(compound_aliases)
         CONDITIONS.append("compound_aliases in UNNEST({})".format(list(compound_aliases)))
 
-    WHERE = WHERE +  " OR ".join(CONDITIONS)
+    if CONDITIONS:
+        WHERE = "WHERE" +  " OR ".join(CONDITIONS)
+    else:
+        WHERE = ""
+
+    if limit:
+        assert isinstance(limit, int), "Limit argument must be an integer"
+        WHERE = WHERE + " LIMIT {}".format(limit)
     query = " ".join([SELECT, FROM, WHERE])
 
     return run_query(query, client).result().to_dataframe()
+
+def cmap_sig(client, args):
+    ...
+    pass
+
+def cmap_matrix(client, table, rids=None, cids=None, project=None, dataset=None):
+    if (project is not None) and (dataset is not None):
+        table_id = '.'.join([project, dataset, table])
+    else:
+        table_id = table
+
+    SELECT = "SELECT cid, rid, value"
+    #make table address
+    FROM = "FROM `{}`".format(table_id)
+    WHERE = ""
+
+    QUERY = " ".join([SELECT, FROM, WHERE])
+
+    print(QUERY)
+    qjob = run_query(QUERY, client)
+
+    print("Running query...")
+    df_long = qjob.result().to_dataframe()
+
+    print("Done.")
+    print("Converting to GCToo object...")
+    gctoo = long_to_gctx(df_long)
+    return gctoo
+
+
+def list_cmap_moas(client):
+    """
+
+    :param client: BigQuery Client
+    :return:
+    """
+    QUERY = "SELECT DISTINCT moa from cmap-big-table.broad_cmap_lincs_data.compoundinfo"
+    return run_query(QUERY, client).result().to_dataframe()
+
+def list_cmap_targets(client):
+    QUERY = "SELECT DISTINCT target from cmap-big-table.broad_cmap_lincs_data.compoundinfo"
+    return run_query(QUERY, client).result().to_dataframe()
+
+def list_cmap_compounds(client):
+    QUERY = "SELECT DISTINCT cmap_name from cmap-big-table.broad_cmap_lincs_data.compoundinfo"
+    return run_query(QUERY, client).result().to_dataframe()
 
 def run_query(query, client, destination_table=None):
     """

@@ -6,21 +6,27 @@ from google.cloud import bigquery
 from google.auth import exceptions
 
 from cmapBQ.utils import write_args, write_status, mk_out_dir, str2bool
-from cmapBQ.query import cmap_compounds
+from cmapBQ.query import cmap_matrix
+from cmapPy.pandasGEXpress.write_gctx import write as write_gctx
+from cmapPy.pandasGEXpress.write_gct import write as write_gct
+
+toolname = "cmap_matrix"
+description = "Download table hosted on BiqQuery as a GCTX"
 
 def parse_args(argv):
-    parser = argparse.ArgumentParser(description="Query Compound Info table for MoA, Target, BRD information")
-    parser.add_argument('--pert_id', help="List of pert_id to query", default=None)
-    parser.add_argument('--cmap_name', help="List of cmap_names to query", default=None)
-    parser.add_argument('--moa', help="List of moas to query", default=None)
-    parser.add_argument('--target', help="List of targets to query", default=None)
-    parser.add_argument('--compound_aliases', help="List of compound aliases to query", default=None)
+    parser = argparse.ArgumentParser(prog="cmapBQ {}".format(toolname), description=description)
+    parser.add_argument('--table', help="Table to query", default=None)
+    parser.add_argument('--cids', help="List of sig_ids to extract", default=None)
+    parser.add_argument('--rids', help="List of moas to query", default=None)
+
 
     tool_group = parser.add_argument_group('Tool options')
-    tool_group.add_argument('-f', '--filename', help="Name of output file", default="result.txt")
+    tool_group.add_argument('-f', '--filename', help="Name of output file", default="result.gctx")
     tool_group.add_argument('-k', '--key', help="Path to service account key. \n Alternatively, set GOOGLE_APPLICATION_CREDENTIALS", default=None)
     tool_group.add_argument('-o', '--out', help="Output folder", default=os.getcwd())
     tool_group.add_argument('-c', '--create_subdir', help="Create Subdirectory", type=str2bool, default=True)
+    tool_group.add_argument('-g', '--use_gctx', help="Use GCTX format, default is true", default=True)
+
 
     if argv:
         args = parser.parse_args(argv)
@@ -31,7 +37,7 @@ def parse_args(argv):
 
 def main(argv):
     args = parse_args(argv)
-    out_path = mk_out_dir(args.out, "cmap_compounds", create_subdir=args.create_subdir)
+    out_path = mk_out_dir(args.out, toolname, create_subdir=args.create_subdir)
     write_args(args, out_path)
 
     if args.key is not None:
@@ -40,10 +46,15 @@ def main(argv):
     try:
         bq_client = bigquery.Client()
 
-        result = cmap_compounds(bq_client, pert_id=args.pert_id, cmap_name=args.cmap_name, moa=args.moa,
-                                target=args.target, compound_aliases=args.compound_aliases)
+        gct = cmap_matrix(bq_client, table=args.table, rids=args.rids, cids=args.cids)
 
-        result.to_csv(os.path.join(out_path, args.filename), sep='\t', index=False)
+        if args.use_gctx:
+            ofile = os.path.join(out_path,'result.gctx')
+            write_gctx(gct, ofile)
+        else:
+            ofile = os.path.join(out_path,'result.gct')
+            write_gct(gct, ofile)
+
         write_status(True, out_path)
     except exceptions.DefaultCredentialsError as cred_error:
         print('Could not automatically determine credentials. Please set GOOGLE_APPLICATION_CREDENTIALS or'
