@@ -80,7 +80,7 @@ def cmap_sig(client, args):
     ...
     pass
 
-def cmap_matrix(client, table, rids=None, cids=None, project=None, dataset=None):
+def cmap_matrix(client, table, rid=None, cid=None, project=None, dataset=None):
     if (project is not None) and (dataset is not None):
         table_id = '.'.join([project, dataset, table])
     else:
@@ -90,6 +90,19 @@ def cmap_matrix(client, table, rids=None, cids=None, project=None, dataset=None)
     #make table address
     FROM = "FROM `{}`".format(table_id)
     WHERE = ""
+
+    CONDITIONS = []
+    if rid:
+        rids = parse_condition(rid)
+        CONDITIONS.append("rid in UNNEST({})".format(list(rids)))
+    if cid:
+        cids = parse_condition(cid)
+        CONDITIONS.append("cid in UNNEST({})".format(list(cids)))
+
+    if CONDITIONS:
+        WHERE = "WHERE " +  " AND ".join(CONDITIONS)
+    else:
+        WHERE = ""
 
     QUERY = " ".join([SELECT, FROM, WHERE])
 
