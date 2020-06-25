@@ -91,6 +91,19 @@ def cmap_matrix(client, table, rids=None, cids=None, project=None, dataset=None)
     FROM = "FROM `{}`".format(table_id)
     WHERE = ""
 
+    CONDITIONS = []
+    if rids:
+        rids = parse_condition(rids)
+        CONDITIONS.append("rid in UNNEST({})".format(list(rids)))
+    if cids:
+        cids = parse_condition(cids)
+        CONDITIONS.append("cid in UNNEST({})".format(list(cids)))
+
+    if CONDITIONS:
+        WHERE = "WHERE " +  " AND ".join(CONDITIONS)
+    else:
+        WHERE = ""
+
     QUERY = " ".join([SELECT, FROM, WHERE])
 
     print(QUERY)
