@@ -13,6 +13,7 @@ from cmapPy.pandasGEXpress.write_gct import write as write_gct
 toolname = "cmap_matrix"
 description = "Download table hosted on BiqQuery as a GCTX"
 
+
 def parse_args(argv):
     parser = argparse.ArgumentParser(prog="cmapBQ {}".format(toolname), description=description)
     parser.add_argument('--table', help="Table to query", default=None)
@@ -25,8 +26,8 @@ def parse_args(argv):
     tool_group.add_argument('-k', '--key', help="Path to service account key. \n Alternatively, set GOOGLE_APPLICATION_CREDENTIALS", default=None)
     tool_group.add_argument('-o', '--out', help="Output folder", default=os.getcwd())
     tool_group.add_argument('-c', '--create_subdir', help="Create Subdirectory", type=str2bool, default=True)
-    tool_group.add_argument('-g', '--use_gctx', help="Use GCTX format, default is true", default=True)
-
+    tool_group.add_argument('-g', '--use_gctx', help="Use GCTX format, default is true", type=str2bool, default=True)
+    tool_group.add_argument('-v', '--verbose', help="Run in verbose mode", type=str2bool, default=True)
 
     if argv:
         args = parser.parse_args(argv)
@@ -46,13 +47,18 @@ def main(argv):
     try:
         bq_client = bigquery.Client()
 
-        gct = cmap_matrix(bq_client, table=args.table, rid=args.rid, cid=args.cid)
+        gct = cmap_matrix(bq_client, table=args.table, rid=args.rid, cid=args.cid, verbose=args.verbose)
+
+        fn = os.path.splitext(os.path.basename(args.filename))[0]
+        shape = gct.data_df.shape
 
         if args.use_gctx:
-            ofile = os.path.join(out_path,'result.gctx')
+            fn = "{}_n{}x{}.gctx".format(fn, shape[1], shape[0])
+            ofile = os.path.join(out_path, fn)
             write_gctx(gct, ofile)
         else:
-            ofile = os.path.join(out_path,'result.gct')
+            fn = "{}_n{}x{}.gct".format(fn, shape[1], shape[0])
+            ofile = os.path.join(out_path, fn)
             write_gct(gct, ofile)
 
         write_status(True, out_path)

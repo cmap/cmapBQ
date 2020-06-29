@@ -80,7 +80,7 @@ def cmap_sig(client, args):
     ...
     pass
 
-def cmap_matrix(client, table, rid=None, cid=None, project=None, dataset=None):
+def cmap_matrix(client, table, rid=None, cid=None, project=None, dataset=None, verbose=False):
     if (project is not None) and (dataset is not None):
         table_id = '.'.join([project, dataset, table])
     else:
@@ -106,7 +106,9 @@ def cmap_matrix(client, table, rid=None, cid=None, project=None, dataset=None):
 
     QUERY = " ".join([SELECT, FROM, WHERE])
 
-    print(QUERY)
+    if verbose:
+        print(QUERY)
+
     qjob = run_query(QUERY, client)
 
     print("Running query...")
@@ -120,18 +122,28 @@ def cmap_matrix(client, table, rid=None, cid=None, project=None, dataset=None):
 
 def list_cmap_moas(client):
     """
-
+    List available MoAs
     :param client: BigQuery Client
-    :return:
+    :return: Single column Dataframe of MoAs
     """
     QUERY = "SELECT DISTINCT moa from cmap-big-table.broad_cmap_lincs_data.compoundinfo"
     return run_query(QUERY, client).result().to_dataframe()
 
 def list_cmap_targets(client):
+    """
+    List available targets
+    :param client: BigQuery Client
+    :return:
+    """
     QUERY = "SELECT DISTINCT target from cmap-big-table.broad_cmap_lincs_data.compoundinfo"
     return run_query(QUERY, client).result().to_dataframe()
 
 def list_cmap_compounds(client):
+    """
+    List available compounds
+    :param client: BigQuery Client
+    :return: Single column Dataframe of compounds
+    """
     QUERY = "SELECT DISTINCT cmap_name from cmap-big-table.broad_cmap_lincs_data.compoundinfo"
     return run_query(QUERY, client).result().to_dataframe()
 
@@ -190,7 +202,8 @@ def export_table(query_job, client, args):
 
 def download_from_extract_job(extract_job, destination_path):
     """
-        Downloads a blob from the ExtractJob
+    Downloads a blob from the ExtractJob
+
     :param extract_job: Extract Job object
     :param destination_path: Output path
     :return: List of files
