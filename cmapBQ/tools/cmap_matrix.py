@@ -19,6 +19,7 @@ def parse_args(argv):
     parser.add_argument('--table', help="Table to query", default=None)
     parser.add_argument('--cid', help="List of sig_ids to extract", default=None)
     parser.add_argument('--rid', help="List of moas to query", default=None)
+    parser.add_argument('--chunk_size', help="Size of each chunk as a number of columns from --cid", default=10000, type=int)
 
 
     tool_group = parser.add_argument_group('Tool options')
@@ -27,7 +28,7 @@ def parse_args(argv):
     tool_group.add_argument('-o', '--out', help="Output folder", default=os.getcwd())
     tool_group.add_argument('-c', '--create_subdir', help="Create Subdirectory", type=str2bool, default=True)
     tool_group.add_argument('-g', '--use_gctx', help="Use GCTX format, default is true", type=str2bool, default=True)
-    tool_group.add_argument('-v', '--verbose', help="Run in verbose mode", type=str2bool, default=True)
+    tool_group.add_argument('-v', '--verbose', help="Run in verbose mode", type=str2bool, default=False)
 
     if argv:
         args = parser.parse_args(argv)
@@ -47,7 +48,7 @@ def main(argv):
     try:
         bq_client = bigquery.Client()
 
-        gct = cmap_matrix(bq_client, table=args.table, rid=args.rid, cid=args.cid, verbose=args.verbose)
+        gct = cmap_matrix(bq_client, table=args.table, rid=args.rid, cid=args.cid, verbose=args.verbose, chunk_size=args.chunk_size)
 
         fn = os.path.splitext(os.path.basename(args.filename))[0]
         shape = gct.data_df.shape

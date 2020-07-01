@@ -4,6 +4,25 @@ import traceback
 from datetime import datetime
 
 from cmapPy.pandasGEXpress.GCToo import GCToo
+from cmapPy.set_io.grp import read as parse_grp
+
+
+def parse_condition(arg, sep=','):
+    """
+    Parse argument for pathname, string or list. If file path exists reads GRP or TXT file.
+    Non-path filenames are tokenized by specified delimiter, default is ','.
+    Returns list
+
+    :param arg: Takes in pathname, string, or list.
+    :param sep: Delimiter to separate elements in string into list. Default is ','
+    :return: list
+    """
+    if isinstance(arg, str):
+        if os.path.isfile(arg):
+            arg = parse_grp(arg)
+        else:
+            arg = arg.split(sep=sep)
+    return list(arg)
 
 def str2bool(v):
     if isinstance(v, bool):
