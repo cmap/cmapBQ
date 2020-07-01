@@ -2,32 +2,16 @@ import re
 import os, argparse, sys, traceback
 from datetime import datetime
 import gzip, shutil
+from math import ceil
 
 import pandas as pd
 from google.cloud import bigquery
 from google.cloud import storage
 from google.auth import exceptions
 
+from .utils import write_args, write_status, mk_out_dir, long_to_gctx, parse_condition
 from cmapPy.set_io.grp import read as parse_grp
-from .utils import write_args, write_status, mk_out_dir, long_to_gctx
-from cmapPy.set_io.grp import read as parse_grp
-
-def parse_condition(arg, sep=','):
-    """
-    Parse argument for pathname, string or list. If file path exists reads GRP or TXT file.
-    Non-path filenames are tokenized by specified delimiter, default is ','.
-    Returns list
-
-    :param arg: Takes in pathname, string, or list.
-    :param sep: Delimiter to separate elements in string into list. Default is ','
-    :return: list
-    """
-    if isinstance(arg, str):
-        if os.path.isfile(arg):
-            arg = parse_grp(arg)
-        else:
-            arg = arg.split(sep=sep)
-    return list(arg)
+from cmapPy.pandasGEXpress.concat import hstack
 
 def cmap_compounds(client, pert_id=None, cmap_name=None, moa=None, target=None,
                    compound_aliases=None, limit=None):
@@ -80,7 +64,19 @@ def cmap_sig(client, args):
     ...
     pass
 
-def cmap_matrix(client, table, rid=None, cid=None, project=None, dataset=None, verbose=False):
+def cmap_matrix(client, table, rid=None, cid=None, project=None, dataset=None, verbose=False, chunk_size=10000):
+    """
+
+    :param client: Bigquery Client
+    :param table: Table containing numerical data
+    :param rid: Row ids
+    :param cid: Column ids
+    :param project:
+    :param dataset:
+    :param verbose: Run in verbose mode
+    :param chunk_size: Runs queries in stages to avoid query character limit. Default 10,000
+    :return: GCToo object
+    """
     if (project is not None) and (dataset is not None):
         table_id = '.'.join([project, dataset, table])
     else:
@@ -91,33 +87,72 @@ def cmap_matrix(client, table, rid=None, cid=None, project=None, dataset=None, v
     FROM = "FROM `{}`".format(table_id)
     WHERE = ""
 
-    CONDITIONS = []
-    if rid:
-        rids = parse_condition(rid)
-        CONDITIONS.append("rid in UNNEST({})".format(list(rids)))
     if cid:
         cids = parse_condition(cid)
-        CONDITIONS.append("cid in UNNEST({})".format(list(cids)))
+        cur = 0
+        gctoos = []
+        nparts = ceil(len(cids)/chunk_size)
+        while cur < nparts:
+            start = cur*chunk_size
+            end = cur*chunk_size + chunk_size #No need to check for end, index only returns present values
+            cur = cur + 1
+            WHERE = ""
 
-    if CONDITIONS:
-        WHERE = "WHERE " +  " AND ".join(CONDITIONS)
+            CONDITIONS = []
+            if rid:
+                rids = parse_condition(rid)
+                CONDITIONS.append("rid in UNNEST({})".format(list(rids)))
+            if cid:
+                cids = parse_condition(cid)
+                CONDITIONS.append("cid in UNNEST({})".format(cids[start:end]))
+
+            if CONDITIONS:
+                WHERE = "WHERE " +  " AND ".join(CONDITIONS)
+            else:
+                WHERE = ""
+
+            QUERY = " ".join([SELECT, FROM, WHERE])
+
+            if verbose:
+                print(QUERY)
+
+            qjob = run_query(QUERY, client)
+
+            print("Running query... ({}/{})".format(cur, nparts))
+            df_long = qjob.result().to_dataframe()
+
+            print("Converting to GCToo object... ({}/{})".format(cur, nparts))
+
+            gctoos.append(long_to_gctx(df_long))
+        return hstack(gctoos)
     else:
-        WHERE = ""
+        CONDITIONS = []
+        if rid:
+            rids = parse_condition(rid)
+            CONDITIONS.append("rid in UNNEST({})".format(list(rids)))
+        if cid:
+            cids = parse_condition(cid)
+            CONDITIONS.append("cid in UNNEST({})".format(list(cids)))
 
-    QUERY = " ".join([SELECT, FROM, WHERE])
+        if CONDITIONS:
+            WHERE = "WHERE " +  " AND ".join(CONDITIONS)
+        else:
+            WHERE = ""
 
-    if verbose:
-        print(QUERY)
+        QUERY = " ".join([SELECT, FROM, WHERE])
 
-    qjob = run_query(QUERY, client)
+        if verbose:
+            print(QUERY)
 
-    print("Running query...")
-    df_long = qjob.result().to_dataframe()
+        qjob = run_query(QUERY, client)
 
-    print("Done.")
-    print("Converting to GCToo object...")
-    gctoo = long_to_gctx(df_long)
-    return gctoo
+        print("Running query...")
+        df_long = qjob.result().to_dataframe()
+
+        print("Done.")
+        print("Converting to GCToo object...")
+        gctoo = long_to_gctx(df_long)
+        return gctoo
 
 
 def list_cmap_moas(client):
