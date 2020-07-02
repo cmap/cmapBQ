@@ -71,3 +71,6 @@ def main(argv):
     except Exception as e:
         write_status(False, out_path, exception=e)
         exit(1)
+
+if __name__ == '__main__':
+    main(sys.argv[1:])
