@@ -64,6 +64,15 @@ def cmap_sig(client, args):
     ...
     pass
 
+def cmap_profiles(client, args):
+    ...
+    pass
+
+def cmap_cell(client, args):
+    ...
+    pass
+
+
 def cmap_matrix(client, table, rid=None, cid=None, project=None, dataset=None, verbose=False, chunk_size=10000):
     """
 
@@ -92,6 +101,7 @@ def cmap_matrix(client, table, rid=None, cid=None, project=None, dataset=None, v
         cur = 0
         gctoos = []
         nparts = ceil(len(cids)/chunk_size)
+        qjobs = []
         while cur < nparts:
             start = cur*chunk_size
             end = cur*chunk_size + chunk_size #No need to check for end, index only returns present values
@@ -116,14 +126,17 @@ def cmap_matrix(client, table, rid=None, cid=None, project=None, dataset=None, v
             if verbose:
                 print(QUERY)
 
-            qjob = run_query(QUERY, client)
-
+            qjobs.append(run_query(QUERY, client))
             print("Running query... ({}/{})".format(cur, nparts))
+
+        cur = 0
+        for qjob in qjobs:
+            cur = cur + 1
+            print("Waiting for result...")
             df_long = qjob.result().to_dataframe()
-
             print("Converting to GCToo object... ({}/{})".format(cur, nparts))
-
             gctoos.append(long_to_gctx(df_long))
+
         return hstack(gctoos)
     else:
         CONDITIONS = []
@@ -153,7 +166,6 @@ def cmap_matrix(client, table, rid=None, cid=None, project=None, dataset=None, v
         print("Converting to GCToo object...")
         gctoo = long_to_gctx(df_long)
         return gctoo
-
 
 def list_cmap_moas(client):
     """
