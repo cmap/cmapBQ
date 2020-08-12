@@ -80,7 +80,7 @@ def main(argv=None):
         #run query
         query_job = run_query(args.query, bigquery_client, args.destination_table)
         #extract table to GCS
-        extract_job = export_table(query_job, bigquery_client, args)
+        extract_job = export_table(query_job, bigquery_client)
         #download from GCS
         csv_path = os.path.join(out_path, 'csv')
         os.mkdir(csv_path)
