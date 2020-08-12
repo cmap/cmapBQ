@@ -76,5 +76,9 @@ def long_to_gctx(df):
     df = df[['rid', 'cid', 'value']]\
             .pivot(index='rid', columns='cid', values='value')
     gct = GCToo(df)
+
+    #Ensure index is string
+    gct.row_metadata_df.index = gct.row_metadata_df.index.astype('str')
+
     return gct
 
