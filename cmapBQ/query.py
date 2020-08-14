@@ -64,11 +64,6 @@ def cmap_compounds(client, pert_id=None, cmap_name=None, moa=None, target=None,
     return run_query(query, client).result().to_dataframe()
 
 
-def cmap_sig(client, args):
-    ...
-    pass
-
-
 def cmap_sig_fields(client, table_id):
     tok = table_id.split('.')
     table_ref = bigquery.Table(table_id)
@@ -87,16 +82,6 @@ def cmap_sig_fields(client, table_id):
         dataset_name, table_name)
     table_desc = pd.read_gbq(QUERY)
 
-    pass
-
-
-def cmap_profiles(client, args):
-    ...
-    pass
-
-
-def cmap_cell(client, args):
-    ...
     pass
 
 
