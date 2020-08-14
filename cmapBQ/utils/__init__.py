@@ -79,6 +79,7 @@ def long_to_gctx(df):
 
     #Ensure index is string
     gct.row_metadata_df.index = gct.row_metadata_df.index.astype('str')
+    gct.data_df.index = gct.data_df.index.astype('str')
 
     return gct
 
