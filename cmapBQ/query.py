@@ -52,7 +52,7 @@ def cmap_compounds(client, pert_id=None, cmap_name=None, moa=None, target=None,
         CONDITIONS.append("compound_aliases in UNNEST({})".format(list(compound_aliases)))
 
     if CONDITIONS:
-        WHERE = "WHERE" + " OR ".join(CONDITIONS)
+        WHERE = "WHERE " + " OR ".join(CONDITIONS)
     else:
         WHERE = ""
 
