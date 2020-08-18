@@ -15,6 +15,36 @@ from .utils.file import csv_to_gctx
 from cmapPy.set_io.grp import read as parse_grp
 from cmapPy.pandasGEXpress.concat import hstack
 
+def cmap_sig(client, sig_id=None, pert_id=None, pert_iname=None, build_name=None, limit=None):
+    SELECT = "SELECT *"
+    FROM = "FROM broad_cmap_lincs_data.siginfo"
+    WHERE = ""
+
+    CONDITIONS = []
+    if pert_id:
+        pert_id = parse_condition(pert_id)
+        CONDITIONS.append("pert_id in UNNEST({})".format(list(pert_id)))
+    if sig_id:
+        sig_id = parse_condition(sig_id)
+        CONDITIONS.append("cmap_name in UNNEST({})".format(list(sig_id)))
+    if pert_iname:
+        pert_iname = parse_condition(pert_iname)
+        CONDITIONS.append("target in UNNEST({})".format(list(pert_iname)))
+    if build_name:
+        build_name = parse_condition(build_name)
+        CONDITIONS.append("moa in UNNEST({})".format(list(build_name)))
+
+    if CONDITIONS:
+        WHERE = "WHERE " + " OR ".join(CONDITIONS)
+    else:
+        WHERE = ""
+
+    if limit:
+        assert isinstance(limit, int), "Limit argument must be an integer"
+        WHERE = WHERE + " LIMIT {}".format(limit)
+    query = " ".join([SELECT, FROM, WHERE])
+
+    return run_query(query, client).result().to_dataframe()
 
 def cmap_compounds(client, pert_id=None, cmap_name=None, moa=None, target=None,
                    compound_aliases=None, limit=None):
@@ -62,6 +92,57 @@ def cmap_compounds(client, pert_id=None, cmap_name=None, moa=None, target=None,
     query = " ".join([SELECT, FROM, WHERE])
 
     return run_query(query, client).result().to_dataframe()
+
+def cmap_matrix(client, table, rid=None, cid=None, verbose=False, chunk_size=10000):
+    """
+
+    :param client: Bigquery Client
+    :param table_id: Table containing numerical data
+    :param rid: Row ids
+    :param cid: Column ids
+    :param verbose: Run in verbose mode
+    :param chunk_size: Runs queries in stages to avoid query character limit. Default 10,000
+    :return: GCToo object
+    """
+
+    table_id = table
+    SELECT = "SELECT cid, rid, value"
+    # make table address
+    FROM = "FROM `{}`".format(table_id)
+    WHERE = ""
+
+    if cid:
+        cid = parse_condition(cid)
+        cur = 0
+        nparts = ceil(len(cid) / chunk_size)
+        result_dfs = []
+        while cur < nparts:
+            start = cur * chunk_size
+            end = cur * chunk_size + chunk_size  # No need to check for end, index only returns present values
+            cur = cur + 1
+            print("Running query... ({}/{})".format(cur, nparts))
+            result_dfs.append(_build_and_launch_query(table_id, cid=cid[start:end]))
+
+        try:
+            pool = mp.Pool(mp.cpu_count())
+            print("Pivoting Dataframes to GCT objects")
+            result_gctoos = pool.map(_pivot_result, result_dfs)
+            pool.close()
+        except:
+            print("Multiprocessing failed, pivoting chunks in series...")
+            cur = 0
+            result_gctoos = []
+            for df in result_dfs:
+                cur = cur + 1
+                print ("Pivoting... ({}/{})".format(cur, nparts))
+                result_gctoos.append(_pivot_result(df))
+        print("Complete")
+        return hstack(result_gctoos)
+    else:
+        print("Running query...")
+        result_df = _build_and_launch_query(table_id, rid=rid, cid=cid)
+        gctoo = _pivot_result(result_df)
+        return gctoo
 
 
 def cmap_sig_fields(client, table_id):
@@ -151,7 +232,7 @@ def _build_and_launch_query(table_id, rid=None, cid=None, verbose=False):
     if verbose:
         print(QUERY)
 
-    return pd.read_gbq(QUERY)
+    return pd.read_gbq(QUERY, dialect="standard")
 
 
 def _pivot_result(df_long):
@@ -164,47 +245,6 @@ def _pivot_result(df_long):
     return gctoo
 
 
-def cmap_matrix(client, table, rid=None, cid=None, verbose=False, chunk_size=10000):
-    """
-
-    :param client: Bigquery Client
-    :param table_id: Table containing numerical data
-    :param rid: Row ids
-    :param cid: Column ids
-    :param verbose: Run in verbose mode
-    :param chunk_size: Runs queries in stages to avoid query character limit. Default 10,000
-    :return: GCToo object
-    """
-
-    table_id = table
-    SELECT = "SELECT cid, rid, value"
-    # make table address
-    FROM = "FROM `{}`".format(table_id)
-    WHERE = ""
-
-    if cid:
-        cid = parse_condition(cid)
-        cur = 0
-        nparts = ceil(len(cid) / chunk_size)
-        result_dfs = []
-        while cur < nparts:
-            start = cur * chunk_size
-            end = cur * chunk_size + chunk_size  # No need to check for end, index only returns present values
-            cur = cur + 1
-            print("Running query... ({}/{})".format(cur, nparts))
-            result_dfs.append(_build_and_launch_query(table_id, cid=cid[start:end]))
-
-        pool = mp.Pool(mp.cpu_count())
-        print("Pivoting Dataframes to GCT objects")
-        result_gctoos = pool.map(_pivot_result, result_dfs)
-        pool.close()
-
-        return hstack(result_gctoos)
-    else:
-        print("Running query...")
-        result_df = _build_and_launch_query(table_id, rid=rid, cid=cid)
-        gctoo = _pivot_result(result_df)
-        return gctoo
 
 
 def list_cmap_moas(client):
