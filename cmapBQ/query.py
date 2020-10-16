@@ -15,7 +15,21 @@ from .utils.file import csv_to_gctx
 from cmapPy.set_io.grp import read as parse_grp
 from cmapPy.pandasGEXpress.concat import hstack
 
-def cmap_sig(client, sig_id=None, pert_id=None, pert_iname=None, build_name=None, limit=None):
+
+def cmap_sig(client, sig_id=None, pert_id=None, pert_iname=None, build_name=None, limit=None,
+             table='cmap_lincs_public_views.siginfo'):
+    """
+    Query level 5 metadata table
+
+    :param client: Bigquery Client
+    :param sig_id: list of sig_ids
+    :param pert_id: list of pert_ids
+    :param pert_iname: list of pert_inames
+    :param build_name: list of builds
+    :param limit: Maximum number of rows to return
+    :param table: table to query. This by default points to the level 5 siginfo table and normally should not be changed.
+    :return:
+    """
     SELECT = "SELECT *"
     FROM = "FROM broad_cmap_lincs_data.siginfo"
     WHERE = ""
@@ -45,6 +59,40 @@ def cmap_sig(client, sig_id=None, pert_id=None, pert_iname=None, build_name=None
     query = " ".join([SELECT, FROM, WHERE])
 
     return run_query(query, client).result().to_dataframe()
+
+def cmap_profiles(client, sample_id=None, pert_id=None, pert_iname=None, build_name=None, limit=None, table='cmap_lincs_public_views.instinfo'):
+    SELECT = "SELECT *"
+    FROM = "FROM {}".format(table)
+    WHERE = ""
+
+    CONDITIONS = []
+    if pert_id:
+        pert_id = parse_condition(pert_id)
+        CONDITIONS.append("pert_id in UNNEST({})".format(list(pert_id)))
+    if sample_id:
+        sample_id = parse_condition(sample_id)
+        CONDITIONS.append("sample_id in UNNEST({})".format(list(sample_id)))
+    if pert_iname:
+        pert_iname = parse_condition(pert_iname)
+        CONDITIONS.append("target in UNNEST({})".format(list(pert_iname)))
+    if build_name:
+        build_name = parse_condition(build_name)
+        CONDITIONS.append("moa in UNNEST({})".format(list(build_name)))
+
+    if CONDITIONS:
+        WHERE = "WHERE " + " OR ".join(CONDITIONS)
+    else:
+        WHERE = ""
+
+    if limit:
+        assert isinstance(limit, int), "Limit argument must be an integer"
+        WHERE = WHERE + " LIMIT {}".format(limit)
+    query = " ".join([SELECT, FROM, WHERE])
+
+    assert (len(query) < 1024 * 10**3), "Query length exceeds maximum allowed by BQ, keep under 1M characters"
+
+    return run_query(query, client).result().to_dataframe()
+
 
 def cmap_compounds(client, pert_id=None, cmap_name=None, moa=None, target=None,
                    compound_aliases=None, limit=None):
