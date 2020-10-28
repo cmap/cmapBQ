@@ -12,6 +12,9 @@ google-cloud-bigquery = {extras = ["bqstorage", "pandas"],version = "*"}
 gsutil = "*"
 google-cloud-storage = "*"
 cmappy = "*"
+pyyaml = "*"
+dacite = "*"
 
 [requires]
-python_version = "3.8"
+python_version = "3.6"
+

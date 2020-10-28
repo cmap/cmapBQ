@@ -71,7 +71,8 @@ setup(
         'cmapPy',
         'pandas',
         'google-cloud-bigquery',
-        'google-cloud-storage'
+        'google-cloud-storage',
+        'pandas-gbq'
     ],
     setup_requires=[
         'setuptools_scm>=3.3.1',
