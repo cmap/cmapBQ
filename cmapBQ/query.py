@@ -1,24 +1,24 @@
 import re
-import os, argparse, sys, traceback
+import os
+import sys
+import gzip
+import shutil
 from datetime import datetime
-import gzip, shutil
+
 from math import ceil
 import multiprocessing as mp
 
 import pandas as pd
 from google.cloud import bigquery
 from google.cloud import storage
-from google.auth import exceptions
 
 import cmapBQ.config as cfg
-from .utils import write_args, write_status, mk_out_dir, long_to_gctx, parse_condition
-from .utils.file import csv_to_gctx
-from cmapPy.set_io.grp import read as parse_grp
+from .utils import long_to_gctx, parse_condition
 from cmapPy.pandasGEXpress.concat import hstack
 
 
 def cmap_sig(client, sig_id=None, pert_id=None, pert_iname=None, build_name=None, limit=None,
-             table=None):
+             table=None, verbose=False):
     """
     Query level 5 metadata table
 
@@ -29,15 +29,15 @@ def cmap_sig(client, sig_id=None, pert_id=None, pert_iname=None, build_name=None
     :param build_name: list of builds
     :param limit: Maximum number of rows to return
     :param table: table to query. This by default points to the level 5 siginfo table and normally should not be changed.
+    :param verbose: Print query and table address.
     :return: Pandas Dataframe
     """
     if table is None:
-        config = cfg._get_config()
+        config = cfg.get_config()
         table = config.tables.siginfo
 
     SELECT = "SELECT *"
-    FROM = "FROM broad_cmap_lincs_data.siginfo"
-    WHERE = ""
+    FROM = "FROM {}".format(table)
 
     CONDITIONS = []
     if pert_id:
@@ -63,9 +63,15 @@ def cmap_sig(client, sig_id=None, pert_id=None, pert_iname=None, build_name=None
         WHERE = WHERE + " LIMIT {}".format(limit)
     query = " ".join([SELECT, FROM, WHERE])
 
+    if verbose:
+        print("Table: \n {}".format(table))
+        print("Query:\n {}".format(query))
+
     return run_query(query, client).result().to_dataframe()
 
-def cmap_profiles(client, sample_id=None, pert_id=None, pert_iname=None, build_name=None, limit=None, table=None):
+
+def cmap_profiles(client, sample_id=None, pert_id=None, pert_iname=None, build_name=None, limit=None,
+                  table=None, verbose=False):
     """
     Query per sample metadata, corresponds to level 3 and level 4 data
 
@@ -76,15 +82,15 @@ def cmap_profiles(client, sample_id=None, pert_id=None, pert_iname=None, build_n
     :param build_name: list of builds
     :param limit: Maximum number of rows to return
     :param table: table to query. This by default points to the siginfo table and normally should not be changed.
+    :param verbose: Print query and table address.
     :return: Pandas Dataframe
     """
     if table is None:
-        config = cfg._get_config()
+        config = cfg.get_config()
         table = config.tables.instinfo
 
     SELECT = "SELECT *"
     FROM = "FROM {}".format(table)
-    WHERE = ""
 
     CONDITIONS = []
     if pert_id:
@@ -110,13 +116,17 @@ def cmap_profiles(client, sample_id=None, pert_id=None, pert_iname=None, build_n
         WHERE = WHERE + " LIMIT {}".format(limit)
     query = " ".join([SELECT, FROM, WHERE])
 
-    assert (len(query) < 1024 * 10**3), "Query length exceeds maximum allowed by BQ, keep under 1M characters"
+    assert (len(query) < 1024 * 10 ** 3), "Query length exceeds maximum allowed by BQ, keep under 1M characters"
+
+    if verbose:
+        print("Table: \n {}".format(table))
+        print("Query:\n {}".format(query))
 
     return run_query(query, client).result().to_dataframe()
 
 
 def cmap_compounds(client, pert_id=None, cmap_name=None, moa=None, target=None,
-                   compound_aliases=None, limit=None):
+                   compound_aliases=None, limit=None, verbose=False):
     """
     Query compoundinfo table for various field by providing lists of compounds, moa, targets, etc.
     'OR' operator used for multiple conditions to be maximally inclusive.
@@ -127,14 +137,15 @@ def cmap_compounds(client, pert_id=None, cmap_name=None, moa=None, target=None,
     :param target: List of targets
     :param moa: List of MoAs
     :param compound_aliases: List of compound aliases
+    :param limit: Maximum number of rows to return
+    :param verbose: Print query and table address.
     :return: Pandas Dataframe matching queries
     """
-    config = cfg._get_config()
+    config = cfg.get_config()
     compoundinfo_table = config.tables.compoundinfo
 
     SELECT = "SELECT *"
     FROM = "FROM {}".format(compoundinfo_table)
-    WHERE = ""
 
     CONDITIONS = []
     if pert_id:
@@ -161,41 +172,51 @@ def cmap_compounds(client, pert_id=None, cmap_name=None, moa=None, target=None,
     if limit:
         assert isinstance(limit, int), "Limit argument must be an integer"
         WHERE = WHERE + " LIMIT {}".format(limit)
+
     query = " ".join([SELECT, FROM, WHERE])
+
+    if verbose:
+        print("Table: \n {}".format(compoundinfo_table))
+        print("Query:\n {}".format(query))
 
     return run_query(query, client).result().to_dataframe()
 
-def cmap_matrix(client, data_level='level5', rid=None, cid=None, verbose=False, chunk_size=10000):
+
+def cmap_matrix(client, data_level='level5', rid=None, cid=None, verbose=False, chunk_size=1000, table=None,
+                limit=1000):
     """
     Query for numerical data for signature-gene level data.
 
     :param client: Bigquery Client
-    :param table_id: Table containing numerical data
+    :param data_level: Data level requested. IDs from siginfo file correspond to 'level5'. Ids from instinfo are available
+     in 'level3' and 'level4'. Choices are ['level5', 'level4', 'level3']
     :param rid: Row ids
     :param cid: Column ids
     :param verbose: Run in verbose mode
-    :param chunk_size: Runs queries in stages to avoid query character limit. Default 10,000
+    :param chunk_size: Runs queries in stages to avoid query character limit. Default 1,000
+    :param table: Table address to query. Overrides 'data_level' parameter. Generally should not be used.
+    :param verbose: Print query and table address.
     :return: GCToo object
     """
 
-    config = cfg._get_config()
-    if data_level == 'level3':
-        table_id = config.tables.level3
-    elif data_level == 'level4':
-        table_id = config.tables.level4
-    elif data_level =='level5':
-        table_id = config.tables.level5
-    else:
-        print("Unsupported data_level. select from ['level3', 'level4', level5'].\n Default is 'level5'. ")
-        sys.exit(1)
+    config = cfg.get_config()
 
-    SELECT = "SELECT cid, rid, value"
-    # make table address
-    FROM = "FROM `{}`".format(table_id)
-    WHERE = ""
+    if table is not None:
+        table_id = table
+    else:
+        if data_level == 'level3':
+            table_id = config.tables.level3
+        elif data_level == 'level4':
+            table_id = config.tables.level4
+        elif data_level == 'level5':
+            table_id = config.tables.level5
+        else:
+            print("Unsupported data_level. select from ['level3', 'level4', level5'].\n Default is 'level5'. ")
+            sys.exit(1)
 
     if cid:
         cid = parse_condition(cid)
+        assert len(cid) <= limit, "List of cids can not exceed limit of {}".format(limit)
         cur = 0
         nparts = ceil(len(cid) / chunk_size)
         result_dfs = []
@@ -203,8 +224,8 @@ def cmap_matrix(client, data_level='level5', rid=None, cid=None, verbose=False, 
             start = cur * chunk_size
             end = cur * chunk_size + chunk_size  # No need to check for end, index only returns present values
             cur = cur + 1
-            print("Running query... ({}/{})".format(cur, nparts))
-            result_dfs.append(_build_and_launch_query(client, table_id, cid=cid[start:end], rid=rid))
+            print("Running query ... ({}/{})".format(cur, nparts))
+            result_dfs.append(_build_and_launch_query(client, table_id, cid=cid[start:end], rid=rid, verbose=verbose))
 
         try:
             pool = mp.Pool(mp.cpu_count())
@@ -212,20 +233,19 @@ def cmap_matrix(client, data_level='level5', rid=None, cid=None, verbose=False, 
             result_gctoos = pool.map(_pivot_result, result_dfs)
             pool.close()
         except:
-            print("Multiprocessing failed, pivoting chunks in series...")
+            if nparts > 1:
+                print("Multiprocessing unavailable, pivoting chunks in series...")
             cur = 0
             result_gctoos = []
             for df in result_dfs:
                 cur = cur + 1
-                print ("Pivoting... ({}/{})".format(cur, nparts))
+                print("Pivoting... ({}/{})".format(cur, nparts))
                 result_gctoos.append(_pivot_result(df))
         print("Complete")
         return hstack(result_gctoos)
     else:
-        print("Running query...")
-        result_df = _build_and_launch_query(client, table_id, rid=rid, cid=cid)
-        gctoo = _pivot_result(result_df)
-        return gctoo
+        print("Provide column ids to extract using the cid= keyword argument")
+        sys.exit(1)
 
 
 def get_table_info(client, table_id):
@@ -235,9 +255,6 @@ def get_table_info(client, table_id):
     :param table_id: table address as {dataset}.{table_id}
     :return: Pandas Dataframe of column names. Note: Not all column names are query-able but all will be returned from a given metadata table
     """
-    tok = table_id.split('.')
-    table_ref = bigquery.Table(table_id)
-
     tok = table_id.split('.')
 
     print(tok)
@@ -252,12 +269,13 @@ def get_table_info(client, table_id):
 
     QUERY = "SELECT column_name, data_type FROM `{}.INFORMATION_SCHEMA.COLUMNS` WHERE table_name='{}'".format(
         dataset_name, table_name)
-    table_desc = pd.read_gbq(QUERY)
+
+    table_desc = run_query(QUERY, client).result().to_dataframe()
 
     return table_desc
 
 
-def _build_query(table_id, rid=None, cid=None, verbose=False):
+def _build_query(table_id, rid=None, cid=None):
     """
     Crafts and retrieves query from rid and cid conditions. Uses pandas GBQ read_gbq
     to download records from BigQuery as a dataframe object.
@@ -265,12 +283,10 @@ def _build_query(table_id, rid=None, cid=None, verbose=False):
     :param table_id: Matrix table
     :param rid: list of row ids (gene space)
     :param cid: list of column ids (samples/sig_ids)
-    :param verbose: Shows extra information for debugging
     :return: Long-form DataFrame object
     """
     SELECT = "SELECT cid, rid, value"
     FROM = "FROM `{}`".format(table_id)
-    WHERE = ""
 
     CONDITIONS = []
     if rid:
@@ -303,7 +319,6 @@ def _build_and_launch_query(client, table_id, rid=None, cid=None, verbose=False)
     """
     SELECT = "SELECT cid, rid, value"
     FROM = "FROM `{}`".format(table_id)
-    WHERE = ""
 
     CONDITIONS = []
     if rid:
@@ -329,6 +344,7 @@ def _build_and_launch_query(client, table_id, rid=None, cid=None, verbose=False)
         print("Pandas read_gbq may not be installed... Running query but no progress indicator available.")
         return run_query(QUERY, client).result().to_dataframe()
 
+
 def _pivot_result(df_long):
     """
     Converts long-form DataFrame to GCToo object
@@ -345,7 +361,10 @@ def list_cmap_moas(client):
     :param client: BigQuery Client
     :return: Single column Dataframe of MoAs
     """
-    QUERY = "SELECT DISTINCT moa from cmap-big-table.broad_cmap_lincs_data.compoundinfo"
+    config = cfg.get_config()
+    compoundinfo_table = config.tables.compoundinfo
+
+    QUERY = "SELECT DISTINCT moa from {}".format(compoundinfo_table)
     return run_query(QUERY, client).result().to_dataframe()
 
 
@@ -355,7 +374,10 @@ def list_cmap_targets(client):
     :param client: BigQuery Client
     :return:
     """
-    QUERY = "SELECT DISTINCT target from cmap-big-table.broad_cmap_lincs_data.compoundinfo"
+    config = cfg.get_config()
+    compoundinfo_table = config.tables.compoundinfo
+
+    QUERY = "SELECT DISTINCT target from {}".format(compoundinfo_table)
     return run_query(QUERY, client).result().to_dataframe()
 
 
@@ -365,7 +387,9 @@ def list_cmap_compounds(client):
     :param client: BigQuery Client
     :return: Single column Dataframe of compounds
     """
-    QUERY = "SELECT DISTINCT cmap_name from cmap-big-table.broad_cmap_lincs_data.compoundinfo"
+    config = cfg.get_config()
+    compoundinfo_table = config.tables.compoundinfo
+    QUERY = "SELECT DISTINCT cmap_name from {}".format(compoundinfo_table)
     return run_query(QUERY, client).result().to_dataframe()
 
 
@@ -407,7 +431,6 @@ def run_query(query, client, destination_table=None):
 
     :param query: Query to run as a string
     :param client: BigQuery client object
-    :param args: additional args
     :return: QueryJob object
     """
 
@@ -442,7 +465,7 @@ def export_table(query_job, client, storage_uri=None):
         storage_uri = storage_uri
     else:
         timestamp_name = datetime.now().strftime('query_%Y%m%d%H%M%S')
-        filename = ('result-*.csv')
+        filename = 'result-*.csv'
         storage_uri = "gs://{}/{}/{}".format(result_bucket, timestamp_name, filename)
         storage_uri = storage_uri
 
