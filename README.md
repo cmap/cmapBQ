@@ -14,6 +14,10 @@ cmapBQ can be added to the current virtual environment by running the following 
 Note: Updates to the repo are not represented in the venv unless this command is run again in the updated repo directory.
 
 
+## Query
+
+Query related functions can be found within `cmapBQ.query` module. 
+
 ## Structure
 
 Runnable modules are placed within the `cmapBQ/tools` directory. These modules must have a main() function.
