@@ -33,7 +33,7 @@ def _get_config_path():
     if os.path.exists(config_path):
         return config_path
 
-def _get_config():
+def get_config():
     config_path = _get_config_path()
 
     with open(config_path, "r") as ymlfile:
@@ -44,7 +44,7 @@ def _get_config():
     return config
 
 def get_bq_client():
-    config = _get_config()
+    config = get_config()
     try:
         os.environ['GOOGLE_APPLICATION_CREDENTIALS'] = config.credentials
         return bigquery.Client()
