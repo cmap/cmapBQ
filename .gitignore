@@ -3,6 +3,9 @@ cmap-big-table-*.json
 out/
 files/
 
+# Jupyter notebooks
+*.ipynb
+
 # Byte-compiled / optimized / DLL files
 __pycache__/
 *.py[cod]
