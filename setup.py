@@ -59,8 +59,9 @@ setup(
         'google-cloud-bigquery',
         'google-cloud-storage',
         'pandas-gbq',
-        'pyyaml>=',
-        'dacite'
+        'pyyaml',
+        'dacite',
+        'pyarrow',
     ],
     setup_requires=[
         'setuptools_scm>=3.3.1',
