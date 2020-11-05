@@ -31,7 +31,7 @@ def _write_default_config(path):
             "level5": "cmap-big-table.cmap_lincs_public_views.L1000_Level5",
             "siginfo": "cmap-big-table.cmap_lincs_public_views.siginfo",
             "instinfo": "cmap-big-table.cmap_lincs_public_views.instinfo",
-            "compoundinfo": "cmap-big-table.broad_cmap_lincs_data.compoundinfo",
+            "compoundinfo": "cmap-big-table.cmap_lincs_public_views.compoundinfo",
         },
     }
 
@@ -40,8 +40,10 @@ def _write_default_config(path):
     return path
 
 
-def set_credentials(path_to_credentials):
+def setup_credentials(path_to_credentials):
     config_path = _get_config_path()
+    if not os.path.exists(config_path):
+        _write_default_config(config_path)
 
     with open(config_path, "r") as ymlfile:
         cfg = yaml.load(ymlfile, Loader=yaml.FullLoader)
@@ -67,14 +69,21 @@ def _get_config_path():
     if os.path.exists(config_path):
         return config_path
     else:
-        _write_default_config(config_path)
         return config_path
 
 
 def get_default_config():
     config_path = _get_config_path()
 
-    return _load_config(config_path)
+    try:
+        return _load_config(config_path)
+    except FileNotFoundError as f:
+        print(
+            "Credentials file not found in: ~/.cmapBQ/config.txt. Check that file exists. Alternatively, run " +
+            "setup_credentials(path_to_google_credentials)"
+        )
+
+        sys_exit = sys.exit(1)
 
 
 def _load_config(config_path):
