@@ -15,20 +15,43 @@ description = "Download table hosted on BiqQuery as a GCTX"
 
 
 def parse_args(argv):
-    parser = argparse.ArgumentParser(prog="cmapBQ {}".format(toolname), description=description)
-    parser.add_argument('--table', help="Table to query", default=None)
-    parser.add_argument('--cid', help="List of sig_ids to extract", default=None)
-    parser.add_argument('--rid', help="List of moas to query", default=None)
-    parser.add_argument('--chunk_size', help="Size of each chunk as a number of columns from --cid", default=10000, type=int)
+    parser = argparse.ArgumentParser(
+        prog="cmapBQ {}".format(toolname), description=description
+    )
+    parser.add_argument("--table", help="Table to query", default=None)
+    parser.add_argument("--cid", help="List of sig_ids to extract", default=None)
+    parser.add_argument("--rid", help="List of moas to query", default=None)
+    parser.add_argument(
+        "--chunk_size",
+        help="Size of each chunk as a number of columns from --cid",
+        default=10000,
+        type=int,
+    )
 
-
-    tool_group = parser.add_argument_group('Tool options')
-    tool_group.add_argument('-f', '--filename', help="Name of output file", default="result.gctx")
-    tool_group.add_argument('-k', '--key', help="Path to service account key. \n Alternatively, set GOOGLE_APPLICATION_CREDENTIALS", default=None)
-    tool_group.add_argument('-o', '--out', help="Output folder", default=os.getcwd())
-    tool_group.add_argument('-c', '--create_subdir', help="Create Subdirectory", type=str2bool, default=True)
-    tool_group.add_argument('-g', '--use_gctx', help="Use GCTX format, default is true", type=str2bool, default=True)
-    tool_group.add_argument('-v', '--verbose', help="Run in verbose mode", type=str2bool, default=False)
+    tool_group = parser.add_argument_group("Tool options")
+    tool_group.add_argument(
+        "-f", "--filename", help="Name of output file", default="result.gctx"
+    )
+    tool_group.add_argument(
+        "-k",
+        "--key",
+        help="Path to service account key. \n Alternatively, set GOOGLE_APPLICATION_CREDENTIALS",
+        default=None,
+    )
+    tool_group.add_argument("-o", "--out", help="Output folder", default=os.getcwd())
+    tool_group.add_argument(
+        "-c", "--create_subdir", help="Create Subdirectory", type=str2bool, default=True
+    )
+    tool_group.add_argument(
+        "-g",
+        "--use_gctx",
+        help="Use GCTX format, default is true",
+        type=str2bool,
+        default=True,
+    )
+    tool_group.add_argument(
+        "-v", "--verbose", help="Run in verbose mode", type=str2bool, default=False
+    )
 
     if argv:
         args = parser.parse_args(argv)
@@ -36,6 +59,7 @@ def parse_args(argv):
     else:
         parser.print_help()
         sys.exit(1)
+
 
 def main(argv):
     args = parse_args(argv)
@@ -48,7 +72,14 @@ def main(argv):
     try:
         bq_client = bigquery.Client()
 
-        gct = cmap_matrix(bq_client, table=args.table, rid=args.rid, cid=args.cid, verbose=args.verbose, chunk_size=args.chunk_size)
+        gct = cmap_matrix(
+            bq_client,
+            table=args.table,
+            rid=args.rid,
+            cid=args.cid,
+            verbose=args.verbose,
+            chunk_size=args.chunk_size,
+        )
 
         fn = os.path.splitext(os.path.basename(args.filename))[0]
         shape = gct.data_df.shape
@@ -64,13 +95,16 @@ def main(argv):
 
         write_status(True, out_path)
     except exceptions.DefaultCredentialsError as cred_error:
-        print('Could not automatically determine credentials. Please set GOOGLE_APPLICATION_CREDENTIALS or'
-              ' specify path to key using --key')
+        print(
+            "Could not automatically determine credentials. Please set GOOGLE_APPLICATION_CREDENTIALS or"
+            " specify path to key using --key"
+        )
         write_status(False, out_path, exception=cred_error)
         exit(1)
     except Exception as e:
         write_status(False, out_path, exception=e)
         exit(1)
 
-if __name__ == '__main__':
+
+if __name__ == "__main__":
     main(sys.argv[1:])

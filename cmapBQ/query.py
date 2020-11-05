@@ -17,8 +17,16 @@ from .utils import long_to_gctx, parse_condition
 from cmapPy.pandasGEXpress.concat import hstack
 
 
-def cmap_sig(client, sig_id=None, pert_id=None, pert_iname=None, build_name=None, limit=None,
-             table=None, verbose=False):
+def cmap_sig(
+    client,
+    sig_id=None,
+    pert_id=None,
+    pert_iname=None,
+    build_name=None,
+    limit=None,
+    table=None,
+    verbose=False,
+):
     """
     Query level 5 metadata table
 
@@ -33,7 +41,7 @@ def cmap_sig(client, sig_id=None, pert_id=None, pert_iname=None, build_name=None
     :return: Pandas Dataframe
     """
     if table is None:
-        config = cfg.get_config()
+        config = cfg.get_default_config()
         table = config.tables.siginfo
 
     SELECT = "SELECT *"
@@ -70,8 +78,16 @@ def cmap_sig(client, sig_id=None, pert_id=None, pert_iname=None, build_name=None
     return run_query(query, client).result().to_dataframe()
 
 
-def cmap_profiles(client, sample_id=None, pert_id=None, pert_iname=None, build_name=None, limit=None,
-                  table=None, verbose=False):
+def cmap_profiles(
+    client,
+    sample_id=None,
+    pert_id=None,
+    pert_iname=None,
+    build_name=None,
+    limit=None,
+    table=None,
+    verbose=False,
+):
     """
     Query per sample metadata, corresponds to level 3 and level 4 data
 
@@ -86,7 +102,7 @@ def cmap_profiles(client, sample_id=None, pert_id=None, pert_iname=None, build_n
     :return: Pandas Dataframe
     """
     if table is None:
-        config = cfg.get_config()
+        config = cfg.get_default_config()
         table = config.tables.instinfo
 
     SELECT = "SELECT *"
@@ -116,7 +132,9 @@ def cmap_profiles(client, sample_id=None, pert_id=None, pert_iname=None, build_n
         WHERE = WHERE + " LIMIT {}".format(limit)
     query = " ".join([SELECT, FROM, WHERE])
 
-    assert (len(query) < 1024 * 10 ** 3), "Query length exceeds maximum allowed by BQ, keep under 1M characters"
+    assert (
+        len(query) < 1024 * 10 ** 3
+    ), "Query length exceeds maximum allowed by BQ, keep under 1M characters"
 
     if verbose:
         print("Table: \n {}".format(table))
@@ -125,8 +143,16 @@ def cmap_profiles(client, sample_id=None, pert_id=None, pert_iname=None, build_n
     return run_query(query, client).result().to_dataframe()
 
 
-def cmap_compounds(client, pert_id=None, cmap_name=None, moa=None, target=None,
-                   compound_aliases=None, limit=None, verbose=False):
+def cmap_compounds(
+    client,
+    pert_id=None,
+    cmap_name=None,
+    moa=None,
+    target=None,
+    compound_aliases=None,
+    limit=None,
+    verbose=False,
+):
     """
     Query compoundinfo table for various field by providing lists of compounds, moa, targets, etc.
     'OR' operator used for multiple conditions to be maximally inclusive.
@@ -141,7 +167,7 @@ def cmap_compounds(client, pert_id=None, cmap_name=None, moa=None, target=None,
     :param verbose: Print query and table address.
     :return: Pandas Dataframe matching queries
     """
-    config = cfg.get_config()
+    config = cfg.get_default_config()
     compoundinfo_table = config.tables.compoundinfo
 
     SELECT = "SELECT *"
@@ -162,7 +188,9 @@ def cmap_compounds(client, pert_id=None, cmap_name=None, moa=None, target=None,
         CONDITIONS.append("moa in UNNEST({})".format(list(moa)))
     if compound_aliases:
         compound_aliases = parse_condition(compound_aliases)
-        CONDITIONS.append("compound_aliases in UNNEST({})".format(list(compound_aliases)))
+        CONDITIONS.append(
+            "compound_aliases in UNNEST({})".format(list(compound_aliases))
+        )
 
     if CONDITIONS:
         WHERE = "WHERE " + " OR ".join(CONDITIONS)
@@ -182,8 +210,16 @@ def cmap_compounds(client, pert_id=None, cmap_name=None, moa=None, target=None,
     return run_query(query, client).result().to_dataframe()
 
 
-def cmap_matrix(client, data_level='level5', rid=None, cid=None, verbose=False, chunk_size=1000, table=None,
-                limit=1000):
+def cmap_matrix(
+    client,
+    data_level="level5",
+    rid=None,
+    cid=None,
+    verbose=False,
+    chunk_size=1000,
+    table=None,
+    limit=1000,
+):
     """
     Query for numerical data for signature-gene level data.
 
@@ -199,33 +235,43 @@ def cmap_matrix(client, data_level='level5', rid=None, cid=None, verbose=False, 
     :return: GCToo object
     """
 
-    config = cfg.get_config()
+    config = cfg.get_default_config()
 
     if table is not None:
         table_id = table
     else:
-        if data_level == 'level3':
+        if data_level == "level3":
             table_id = config.tables.level3
-        elif data_level == 'level4':
+        elif data_level == "level4":
             table_id = config.tables.level4
-        elif data_level == 'level5':
+        elif data_level == "level5":
             table_id = config.tables.level5
         else:
-            print("Unsupported data_level. select from ['level3', 'level4', level5'].\n Default is 'level5'. ")
+            print(
+                "Unsupported data_level. select from ['level3', 'level4', level5'].\n Default is 'level5'. "
+            )
             sys.exit(1)
 
     if cid:
         cid = parse_condition(cid)
-        assert len(cid) <= limit, "List of cids can not exceed limit of {}".format(limit)
+        assert len(cid) <= limit, "List of cids can not exceed limit of {}".format(
+            limit
+        )
         cur = 0
         nparts = ceil(len(cid) / chunk_size)
         result_dfs = []
         while cur < nparts:
             start = cur * chunk_size
-            end = cur * chunk_size + chunk_size  # No need to check for end, index only returns present values
+            end = (
+                cur * chunk_size + chunk_size
+            )  # No need to check for end, index only returns present values
             cur = cur + 1
             print("Running query ... ({}/{})".format(cur, nparts))
-            result_dfs.append(_build_and_launch_query(client, table_id, cid=cid[start:end], rid=rid, verbose=verbose))
+            result_dfs.append(
+                _build_and_launch_query(
+                    client, table_id, cid=cid[start:end], rid=rid, verbose=verbose
+                )
+            )
 
         try:
             pool = mp.Pool(mp.cpu_count())
@@ -255,11 +301,11 @@ def get_table_info(client, table_id):
     :param table_id: table address as {dataset}.{table_id}
     :return: Pandas Dataframe of column names. Note: Not all column names are query-able but all will be returned from a given metadata table
     """
-    tok = table_id.split('.')
+    tok = table_id.split(".")
 
     print(tok)
     if len(tok) > 1:
-        dataset_name = '.'.join(tok[0:-1])
+        dataset_name = ".".join(tok[0:-1])
         table_name = tok[-1]
     else:
         return NotImplementedError("table_id should be in {dataset}.{table_id} format")
@@ -268,7 +314,8 @@ def get_table_info(client, table_id):
     print(table_name)
 
     QUERY = "SELECT column_name, data_type FROM `{}.INFORMATION_SCHEMA.COLUMNS` WHERE table_name='{}'".format(
-        dataset_name, table_name)
+        dataset_name, table_name
+    )
 
     table_desc = run_query(QUERY, client).result().to_dataframe()
 
@@ -341,7 +388,9 @@ def _build_and_launch_query(client, table_id, rid=None, cid=None, verbose=False)
     try:
         return pd.read_gbq(QUERY, dialect="standard")
     except:
-        print("Pandas read_gbq may not be installed... Running query but no progress indicator available.")
+        print(
+            "Pandas read_gbq may not be installed... Running query but no progress indicator available."
+        )
         return run_query(QUERY, client).result().to_dataframe()
 
 
@@ -361,7 +410,7 @@ def list_cmap_moas(client):
     :param client: BigQuery Client
     :return: Single column Dataframe of MoAs
     """
-    config = cfg.get_config()
+    config = cfg.get_default_config()
     compoundinfo_table = config.tables.compoundinfo
 
     QUERY = "SELECT DISTINCT moa from {}".format(compoundinfo_table)
@@ -374,7 +423,7 @@ def list_cmap_targets(client):
     :param client: BigQuery Client
     :return:
     """
-    config = cfg.get_config()
+    config = cfg.get_default_config()
     compoundinfo_table = config.tables.compoundinfo
 
     QUERY = "SELECT DISTINCT target from {}".format(compoundinfo_table)
@@ -387,7 +436,7 @@ def list_cmap_compounds(client):
     :param client: BigQuery Client
     :return: Single column Dataframe of compounds
     """
-    config = cfg.get_config()
+    config = cfg.get_default_config()
     compoundinfo_table = config.tables.compoundinfo
     QUERY = "SELECT DISTINCT cmap_name from {}".format(compoundinfo_table)
     return run_query(QUERY, client).result().to_dataframe()
@@ -412,10 +461,10 @@ def extract_matrix_GCS(query, destination_table=None, storage_uri=None, out_path
     # extract table to GCS
     extract_job = export_table(query_job, bigquery_client, storage_uri=storage_uri)
     # download from GCS
-    csv_path = os.path.join(out_path, 'csv')
+    csv_path = os.path.join(out_path, "csv")
     cnt = 0
     while os.path.exists(csv_path):
-        csv_path = os.path.join(out_path, 'csv{}'.format(cnt))
+        csv_path = os.path.join(out_path, "csv{}".format(cnt))
         cnt += 1
     os.mkdir(csv_path)
 
@@ -425,7 +474,7 @@ def extract_matrix_GCS(query, destination_table=None, storage_uri=None, out_path
     return file_list
 
 
-def run_query(query, client, destination_table=None):
+def _run_query_create_log(query, client, destination_table=None):
     """
     Runs BigQuery queryjob
 
@@ -439,15 +488,24 @@ def run_query(query, client, destination_table=None):
     if destination_table is not None:
         job_config.destination = destination_table
     else:
-        timestamp_name = datetime.now().strftime('query_%Y%m%d%H%M%S')
+        timestamp_name = datetime.now().strftime("query_%Y%m%d%H%M%S")
         project = "cmap-big-table"
         dataset = "cmap_query"
         dest_tbl = ".".join([project, dataset, timestamp_name])
         job_config.destination = dest_tbl
 
-    job_config.create_disposition = 'CREATE_IF_NEEDED'
+    job_config.create_disposition = "CREATE_IF_NEEDED"
     return client.query(query, job_config=job_config)
 
+def run_query(query, client):
+    """
+    Runs BigQuery queryjob
+
+    :param query: Query to run as a string
+    :param client: BigQuery client object
+    :return: QueryJob object
+    """
+    return client.query(query)
 
 def export_table(query_job, client, storage_uri=None):
     """
@@ -458,24 +516,21 @@ def export_table(query_job, client, storage_uri=None):
     :param storage_uri: location in GCS to extract table
     :return: ExtractJob object
     """
-    result_bucket = 'clue_queries'
+    result_bucket = "clue_queries"
     res = query_job.result()
     # print(res)
     if storage_uri is not None:
         storage_uri = storage_uri
     else:
-        timestamp_name = datetime.now().strftime('query_%Y%m%d%H%M%S')
-        filename = 'result-*.csv'
+        timestamp_name = datetime.now().strftime("query_%Y%m%d%H%M%S")
+        filename = "result-*.csv"
         storage_uri = "gs://{}/{}/{}".format(result_bucket, timestamp_name, filename)
         storage_uri = storage_uri
 
-    exjob_config = bigquery.job.ExtractJobConfig(compression='GZIP')
+    exjob_config = bigquery.job.ExtractJobConfig(compression="GZIP")
 
     table_ref = query_job.destination
-    extract_job = client.extract_table(
-        table_ref,
-        storage_uri,
-        job_config=exjob_config)
+    extract_job = client.extract_table(table_ref, storage_uri, job_config=exjob_config)
 
     extract_job.result()
     return extract_job
@@ -495,14 +550,14 @@ def download_from_extract_job(extract_job, destination_path):
 
     storage_client = storage.Client()
 
-    bucket = storage_client.bucket('clue_queries')
+    bucket = storage_client.bucket("clue_queries")
     location = extract_job.destination_uris[0]
     blob_prefix = re.findall("query_[0-9]+/", location)
     blobs = [_ for _ in bucket.list_blobs(prefix=blob_prefix)]
 
     filelist = []
     for blob in blobs:
-        fn = os.path.basename(blob.name) + '.gz'
+        fn = os.path.basename(blob.name) + ".gz"
         blob.download_to_filename(os.path.join(destination_path, fn))
         filelist.append(os.path.join(destination_path, fn))
 
@@ -518,8 +573,8 @@ def gunzip_csv(filepaths, destination_path):
     """
     out_paths = []
     for filename in filepaths:
-        assert filename.endswith('.gz'), "Can't unzip extension"
-        with gzip.open(filename, 'rb') as f_in:
+        assert filename.endswith(".gz"), "Can't unzip extension"
+        with gzip.open(filename, "rb") as f_in:
             if destination_path is not None:
                 no_ext = os.path.splitext(filename)[0]
                 outname = os.path.basename(no_ext)  # Just file name w/o ext
@@ -528,7 +583,7 @@ def gunzip_csv(filepaths, destination_path):
                 outname = os.path.splitext(filename)[0]  # remove .gz extension
 
             out_paths.append(outname)
-            with open(outname, 'wb') as f_out:
+            with open(outname, "wb") as f_out:
                 shutil.copyfileobj(f_in, f_out)
 
         if os.path.exists(outname):  # If unzipped version exists, delete .gz file

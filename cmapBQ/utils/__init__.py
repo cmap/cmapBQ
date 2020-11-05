@@ -7,7 +7,7 @@ from cmapPy.pandasGEXpress.GCToo import GCToo
 from cmapPy.set_io.grp import read as parse_grp
 
 
-def parse_condition(arg, sep=','):
+def parse_condition(arg, sep=","):
     """
     Parse argument for pathname, string or list. If file path exists reads GRP or TXT file.
     Non-path filenames are tokenized by specified delimiter, default is ','.
@@ -24,33 +24,37 @@ def parse_condition(arg, sep=','):
             arg = arg.split(sep=sep)
     return list(arg)
 
+
 def str2bool(v):
     if isinstance(v, bool):
-       return v
-    if v.lower() in ('yes', 'true', 't', 'y', '1'):
+        return v
+    if v.lower() in ("yes", "true", "t", "y", "1"):
         return True
-    elif v.lower() in ('no', 'false', 'f', 'n', '0'):
+    elif v.lower() in ("no", "false", "f", "n", "0"):
         return False
     else:
-        raise argparse.ArgumentTypeError('Boolean value expected.')
+        raise argparse.ArgumentTypeError("Boolean value expected.")
+
 
 def write_args(args, out_path):
     options = vars(args)
-    with open(os.path.join(out_path, 'config.txt'), 'w+') as f:
+    with open(os.path.join(out_path, "config.txt"), "w+") as f:
         for option in options:
             f.write("{}: {}\n".format(option, options[option]))
             print("{}: {}".format(option, options[option]))
 
+
 def write_status(success, out, exception=""):
     if success:
         print("SUCCESS: Output written to {}".format(out))
-        with open(os.path.join(out, 'SUCCESS.txt'), 'w') as file:
-            file.write("Finished on {}\n".format(datetime.now().strftime('%c')))
+        with open(os.path.join(out, "SUCCESS.txt"), "w") as file:
+            file.write("Finished on {}\n".format(datetime.now().strftime("%c")))
     else:
         print("FAILED: Stack traced saved to {}".format(out))
-        with open(os.path.join(out, 'FAILURE.txt'), 'w') as file:
+        with open(os.path.join(out, "FAILURE.txt"), "w") as file:
             file.write(str(exception))
             file.write(traceback.format_exc())
+
 
 def mk_out_dir(path, toolname, create_subdir=True):
     path = os.path.abspath(path)
@@ -58,13 +62,14 @@ def mk_out_dir(path, toolname, create_subdir=True):
         os.mkdir(path)
 
     if create_subdir:
-        timestamp = datetime.now().strftime('_%Y%m%d%H%M%S')
-        out_name = ''.join([toolname, timestamp])
+        timestamp = datetime.now().strftime("_%Y%m%d%H%M%S")
+        out_name = "".join([toolname, timestamp])
         out_path = os.path.join(path, out_name)
         os.mkdir(out_path)
         return out_path
     else:
         return path
+
 
 def long_to_gctx(df):
     """
@@ -73,13 +78,11 @@ def long_to_gctx(df):
     :param df: Long form pandas DataFrame
     :return: GCToo object
     """
-    df = df[['rid', 'cid', 'value']]\
-            .pivot(index='rid', columns='cid', values='value')
+    df = df[["rid", "cid", "value"]].pivot(index="rid", columns="cid", values="value")
     gct = GCToo(df)
 
-    #Ensure index is string
-    gct.row_metadata_df.index = gct.row_metadata_df.index.astype('str')
-    gct.data_df.index = gct.data_df.index.astype('str')
+    # Ensure index is string
+    gct.row_metadata_df.index = gct.row_metadata_df.index.astype("str")
+    gct.data_df.index = gct.data_df.index.astype("str")
 
     return gct
-

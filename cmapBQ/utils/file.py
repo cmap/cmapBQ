@@ -6,6 +6,7 @@ from cmapPy.pandasGEXpress.GCToo import GCToo
 from cmapPy.pandasGEXpress.write_gctx import write as write_gctx
 from cmapPy.pandasGEXpress.write_gct import write as write_gct
 
+
 def csv_to_gctx(filepaths, outpath, use_gctx=True):
     """
         Convert list of csv files to gctx. CSVs must have 'rid', 'cid' and 'value' columns
@@ -20,15 +21,15 @@ def csv_to_gctx(filepaths, outpath, use_gctx=True):
         df = pd.read_csv(filename, index_col=None, header=0)
         li.append(df)
     result = pd.concat(li, axis=0, ignore_index=True)
-    df = result[['rid', 'cid', 'value']]\
-            .pivot(index='rid', columns='cid', values='value')
+    df = result[["rid", "cid", "value"]].pivot(
+        index="rid", columns="cid", values="value"
+    )
     gct = GCToo(df)
     if use_gctx:
-        ofile = os.path.join(outpath,'result.gctx')
+        ofile = os.path.join(outpath, "result.gctx")
         write_gctx(gct, ofile)
     else:
-        ofile = os.path.join(outpath,'result.gct')
+        ofile = os.path.join(outpath, "result.gct")
         write_gct(gct, ofile)
 
     return ofile
-
