@@ -474,7 +474,7 @@ def extract_matrix_GCS(query, destination_table=None, storage_uri=None, out_path
     return file_list
 
 
-def run_query(query, client, destination_table=None):
+def _run_query_create_log(query, client, destination_table=None):
     """
     Runs BigQuery queryjob
 
@@ -497,6 +497,15 @@ def run_query(query, client, destination_table=None):
     job_config.create_disposition = "CREATE_IF_NEEDED"
     return client.query(query, job_config=job_config)
 
+def run_query(query, client):
+    """
+    Runs BigQuery queryjob
+
+    :param query: Query to run as a string
+    :param client: BigQuery client object
+    :return: QueryJob object
+    """
+    return client.query(query)
 
 def export_table(query_job, client, storage_uri=None):
     """
