@@ -57,6 +57,7 @@ setup(
         'cmapPy',
         'pandas',
         'google-cloud-bigquery',
+        'google-cloud-bigquery-storage',
         'google-cloud-storage',
         'pandas-gbq',
         'pyyaml',
