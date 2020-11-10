@@ -37,7 +37,6 @@ def cmap_genes(client,
                gene_title = None,
                gene_type=None,
                src=None):
-
     return NotImplementedError
 
 def cmap_sig(
@@ -47,6 +46,7 @@ def cmap_sig(
     pert_iname=None,
     cell_iname=None,
     build_name=None,
+    return_fields='priority',
     limit=None,
     table=None,
     verbose=False,
@@ -59,17 +59,33 @@ def cmap_sig(
     :param sig_id: list of sig_ids
     :param pert_id: list of pert_ids
     :param pert_iname: list of pert_inames
+    :param cell_iname: list of cell names
     :param build_name: list of builds
+    :param return_fields: ['priority', 'all']
     :param limit: Maximum number of rows to return
     :param table: table to query. This by default points to the level 5 siginfo table and normally should not be changed.
     :param verbose: Print query and table address.
     :return: Pandas Dataframe
     """
+
+    priority_fields = ['sig_id', 'pert_id',
+              'pert_iname', 'pert_type', 'cell_iname',
+              'pert_idose', 'nsample', 'build_name', 'project_code',
+              'ss_ngene', 'cc_q75',
+              'distil_tas']
+
+    if return_fields == 'priority':
+        SELECT = "SELECT " + ",".join(priority_fields)
+    elif return_fields == 'all':
+        SELECT = "SELECT *"
+    else:
+        print("return_fields only takes ['priority', 'all']")
+        sys.exit(1)
+
     if table is None:
         config = cfg.get_default_config()
         table = config.tables.siginfo
 
-    SELECT = "SELECT *"
     FROM = "FROM {}".format(table)
 
     CONDITIONS = []
