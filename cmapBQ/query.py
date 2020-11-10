@@ -16,16 +16,41 @@ import cmapBQ.config as cfg
 from .utils import long_to_gctx, parse_condition
 from cmapPy.pandasGEXpress.concat import hstack
 
+def list_tables():
+    config = cfg.get_default_config()
+    print(config.tables)
+    return
+
+def cmap_cell(client,
+              cell_iname=None,
+              cell_alias = None,
+              ccle_name=None,
+              primary_disease=None,
+              cell_lineage=None,
+              cell_type=None):
+    return NotImplementedError
+
+def cmap_genes(client,
+               gene_id=None,
+               gene_symbol=None,
+               ensembl_id=None,
+               gene_title = None,
+               gene_type=None,
+               src=None):
+
+    return NotImplementedError
 
 def cmap_sig(
     client,
     sig_id=None,
     pert_id=None,
     pert_iname=None,
+    cell_iname=None,
     build_name=None,
     limit=None,
     table=None,
     verbose=False,
+
 ):
     """
     Query level 5 metadata table
@@ -54,6 +79,9 @@ def cmap_sig(
     if sig_id:
         sig_id = parse_condition(sig_id)
         CONDITIONS.append("sig_id in UNNEST({})".format(list(sig_id)))
+    if cell_iname:
+        cell_iname = parse_condition(cell_iname)
+        CONDITIONS.append("cell_iname in UNNEST({})".format(list(cell_iname)))
     if pert_iname:
         pert_iname = parse_condition(pert_iname)
         CONDITIONS.append("pert_iname in UNNEST({})".format(list(pert_iname)))
@@ -303,15 +331,11 @@ def get_table_info(client, table_id):
     """
     tok = table_id.split(".")
 
-    print(tok)
     if len(tok) > 1:
         dataset_name = ".".join(tok[0:-1])
         table_name = tok[-1]
     else:
         return NotImplementedError("table_id should be in {dataset}.{table_id} format")
-
-    print(dataset_name)
-    print(table_name)
 
     QUERY = "SELECT column_name, data_type FROM `{}.INFORMATION_SCHEMA.COLUMNS` WHERE table_name='{}'".format(
         dataset_name, table_name
