@@ -21,7 +21,6 @@ def read(*names, **kwargs):
     ) as fh:
         return fh.read()
 
-
 setup(
     name='cmapBQ',
     use_scm_version={
@@ -32,15 +31,13 @@ setup(
     description="Toolkit for interacting with Google BigQuery and CMAP datasets",
     author='Anup Jonchhe',
     author_email='anup@broadinstitute.org',
-    url='https://github.com/AnupJonchhe/BQ_toolkit.git',
+    url='https://github.com/cmap/BQ_toolkit',
     packages=find_packages(),
     py_modules=[splitext(basename(path))[0] for path in glob('./*.py')],
     include_package_data=True,
     zip_safe=False,
     classifiers=[
         # complete classifier list: http://pypi.python.org/pypi?%3Aaction=list_classifiers
-        'Development Status :: 5 - Production/Stable',
-        'Intended Audience :: Developers',
         'Operating System :: Unix',
         'Operating System :: POSIX',
         'Operating System :: Microsoft :: Windows',
@@ -48,26 +45,15 @@ setup(
         'Programming Language :: Python :: 3.6',
         'Programming Language :: Python :: 3.7',
         'Programming Language :: Python :: 3.8',
-        'Programming Language :: Python :: Implementation :: CPython',
         'Programming Language :: Python :: Implementation :: PyPy',
-        # uncomment if you test on these interpreters:
-        # 'Programming Language :: Python :: Implementation :: IronPython',
-        # 'Programming Language :: Python :: Implementation :: Jython',
-        # 'Programming Language :: Python :: Implementation :: Stackless',
-        'Topic :: Utilities',
-        'Private :: Do Not Upload',
     ],
     project_urls={
-        #'Documentation': 'https://2020sp-pset-5-NoopDawg.readthedocs.io/',
+        #'Documentation': 'https://cmapBQ.readthedocs.io/',
         #'Changelog': 'https://2020sp-pset-5-NoopDawg.readthedocs.io/en/latest/changelog.html',
-        #'Issue Tracker': 'https://github.com/csci-e-29/2020sp-pset-5-NoopDawg/issues',
+        #'Issue Tracker': 'https://github.com/BQ_toolkit/issues',
     },
-    keywords=[
-        # eg: 'keyword1', 'keyword2', 'keyword3',
-    ],
     python_requires='>=3.6',
     install_requires=[
-        # eg: 'aspectlib==1.1.1', 'six>=1.7',
         'cmapPy',
         'pandas',
         'google-cloud-bigquery',
@@ -75,7 +61,8 @@ setup(
         'google-cloud-storage',
         'pandas-gbq',
         'pyyaml',
-        'dacite'
+        'dacite',
+        'pyarrow',
     ],
     setup_requires=[
         'setuptools_scm>=3.3.1',

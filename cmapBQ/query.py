@@ -53,13 +53,13 @@ def cmap_sig(
         CONDITIONS.append("pert_id in UNNEST({})".format(list(pert_id)))
     if sig_id:
         sig_id = parse_condition(sig_id)
-        CONDITIONS.append("cmap_name in UNNEST({})".format(list(sig_id)))
+        CONDITIONS.append("sig_id in UNNEST({})".format(list(sig_id)))
     if pert_iname:
         pert_iname = parse_condition(pert_iname)
-        CONDITIONS.append("target in UNNEST({})".format(list(pert_iname)))
+        CONDITIONS.append("pert_iname in UNNEST({})".format(list(pert_iname)))
     if build_name:
         build_name = parse_condition(build_name)
-        CONDITIONS.append("moa in UNNEST({})".format(list(build_name)))
+        CONDITIONS.append("build_name in UNNEST({})".format(list(build_name)))
 
     if CONDITIONS:
         WHERE = "WHERE " + " OR ".join(CONDITIONS)
@@ -117,10 +117,10 @@ def cmap_profiles(
         CONDITIONS.append("sample_id in UNNEST({})".format(list(sample_id)))
     if pert_iname:
         pert_iname = parse_condition(pert_iname)
-        CONDITIONS.append("target in UNNEST({})".format(list(pert_iname)))
+        CONDITIONS.append("pert_iname in UNNEST({})".format(list(pert_iname)))
     if build_name:
         build_name = parse_condition(build_name)
-        CONDITIONS.append("moa in UNNEST({})".format(list(build_name)))
+        CONDITIONS.append("build_name in UNNEST({})".format(list(build_name)))
 
     if CONDITIONS:
         WHERE = "WHERE " + " OR ".join(CONDITIONS)

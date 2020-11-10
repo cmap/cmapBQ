@@ -46,7 +46,7 @@ def setup_credentials(path_to_credentials):
         _write_default_config(config_path)
 
     with open(config_path, "r") as ymlfile:
-        cfg = yaml.load(ymlfile, Loader=yaml.FullLoader)
+        cfg = yaml.safe_load(ymlfile)
 
     cfg["credentials"] = path_to_credentials
 
@@ -92,7 +92,7 @@ def _load_config(config_path):
     :return: Configuration Dataclass
     """
     with open(config_path, "r") as ymlfile:
-        cfg = yaml.load(ymlfile, Loader=yaml.FullLoader)
+        cfg = yaml.safe_load(ymlfile)
 
     config = dacite.from_dict(data_class=Configuration, data=cfg)
     return config
@@ -107,7 +107,7 @@ def set_default_config(input_config_path):
     config_location = _get_config_path()
 
     with open(input_config_path, "r") as ymlfile:
-        cfg = yaml.load(ymlfile, Loader=yaml.FullLoader)
+        cfg = yaml.safe_load(ymlfile)
 
     with open(config_location, "w") as fh:
         yaml.dump(cfg, fh)
