@@ -10,6 +10,7 @@ from google.auth.exceptions import DefaultCredentialsError
 @dataclass
 class TableDirectory:
     compoundinfo: str
+    genetic_pertinfo: str
     geneinfo: str
     cellinfo: str
     instinfo: str
@@ -39,6 +40,7 @@ def _write_default_config(path):
             "instinfo": "cmap-big-table.cmap_lincs_public_views.instinfo",
             "compoundinfo": "cmap-big-table.cmap_lincs_public_views.compoundinfo",
             "geneinfo": "cmap-big-table.cmap_lincs_public_views.geneinfo",
+            "genetic_pertinfo": "cmap-big-table.cmap_lincs_public_views.genetic_pertinfo",
             "cellinfo": "cmap-big-table.cmap_lincs_public_views.cellinfo",
         },
     }
