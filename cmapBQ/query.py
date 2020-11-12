@@ -16,13 +16,201 @@ import cmapBQ.config as cfg
 from .utils import long_to_gctx, parse_condition
 from cmapPy.pandasGEXpress.concat import hstack
 
+def list_tables():
+    config = cfg.get_default_config()
+    print(config.tables)
+    return
+
+def cmap_genetic_perts(client,
+                       pert_id=None,
+                       cmap_name=None,
+                       gene_id=None,
+                       gene_title=None,
+                       ensemble_id=None,
+                       table=None,
+                       verbose=False):
+    """
+    Query genetic_pertinfo table
+
+    :param client: Bigquery Client
+    :param pert_id: List of pert_ids
+    :param cmap_name: List of cmap_names
+    :param gene_id: List of type INTEGER corresponding to gene_ids
+    :param gene_title: List of gene_titles
+    :param ensemble_id: List of ensumble_ids
+    :param table: table to query. This by default points to the siginfo table and normally should not be changed.
+    :param verbose: Print query and table address.
+    :return:
+    """
+    if table is None:
+        config = cfg.get_default_config()
+        table = config.tables.genetic_pertinfo
+
+    SELECT = "SELECT *"
+    FROM = "FROM {}".format(table)
+
+    CONDITIONS = []
+    if pert_id:
+        pert_id = parse_condition(pert_id)
+        CONDITIONS.append("pert_id in UNNEST({})".format(list(pert_id)))
+    if cmap_name:
+        cmap_name = parse_condition(cmap_name)
+        CONDITIONS.append("cmap_name in UNNEST({})".format(list(cmap_name)))
+    if gene_id:
+        gene_id = parse_condition(gene_id)
+        CONDITIONS.append("gene_id in UNNEST({})".format(list(gene_id)))
+    if gene_title:
+        gene_title = parse_condition(gene_title)
+        CONDITIONS.append("gene_title in UNNEST({})".format(list(gene_title)))
+    if ensemble_id:
+        ensemble_id = parse_condition(ensemble_id)
+        CONDITIONS.append("ensemble_id in UNNEST({})".format(list(ensemble_id)))
+
+    if CONDITIONS:
+        WHERE = "WHERE " + " OR ".join(CONDITIONS)
+    else:
+        WHERE = ""
+
+    query = " ".join([SELECT, FROM, WHERE])
+
+    if verbose:
+        print("Table: \n {}".format(table))
+        print("Query:\n {}".format(query))
+
+    return run_query(query, client).result().to_dataframe()
+
+
+def cmap_cell(client,
+              cell_iname=None,
+              cell_alias = None,
+              ccle_name=None,
+              primary_disease=None,
+              cell_lineage=None,
+              cell_type=None,
+              table=None,
+              verbose=False):
+    """
+    Query cellinfo table
+
+    :param client: Bigquery Client
+    :param cell_iname: List of cell_inames
+    :param cell_alias: List of cell aliases
+    :param ccle_name: List of ccle_names
+    :param primary_disease: List of primary_diseases
+    :param cell_lineage: List of cell_lineages
+    :param cell_type: List of cell_types
+    :param table: table to query. This by default points to the siginfo table and normally should not be changed.
+    :param verbose: Print query and table address.
+    :return: Pandas DataFrame
+    """
+    if table is None:
+       config = cfg.get_default_config()
+       table = config.tables.cellinfo
+
+    SELECT = "SELECT *"
+    FROM = "FROM {}".format(table)
+
+    CONDITIONS = []
+    if cell_iname:
+        cell_iname = parse_condition(cell_iname)
+        CONDITIONS.append("cell_iname in UNNEST({})".format(list(cell_iname)))
+    if cell_alias:
+        cell_alias = parse_condition(cell_alias)
+        CONDITIONS.append("cell_alias in UNNEST({})".format(list(cell_alias)))
+    if ccle_name:
+        ccle_name = parse_condition(ccle_name)
+        CONDITIONS.append("ccle_name in UNNEST({})".format(list(ccle_name)))
+    if primary_disease:
+        primary_disease = parse_condition(primary_disease)
+        CONDITIONS.append("primary_disease in UNNEST({})".format(list(primary_disease)))
+    if cell_lineage:
+        cell_lineage = parse_condition(cell_lineage)
+        CONDITIONS.append("cell_lineage in UNNEST({})".format(list(cell_lineage)))
+    if cell_type:
+        cell_type = parse_condition(cell_type)
+        CONDITIONS.append("cell_type in UNNEST({})".format(list(cell_type)))
+
+    if CONDITIONS:
+       WHERE = "WHERE " + " OR ".join(CONDITIONS)
+    else:
+       WHERE = ""
+
+    query = " ".join([SELECT, FROM, WHERE])
+
+    if verbose:
+       print("Table: \n {}".format(table))
+       print("Query:\n {}".format(query))
+
+    return run_query(query, client).result().to_dataframe()
+
+def cmap_genes(client,
+               gene_id=None,
+               gene_symbol=None,
+               ensembl_id=None,
+               gene_title = None,
+               gene_type=None,
+               src=None, table=None,
+               verbose=False):
+    """
+    Query geneinfo table. geneinfo contains information about
+
+    :param client: Bigquery Client
+    :param gene_id: list of gene_ids
+    :param gene_symbol: list of gene_symbols
+    :param ensembl_id:  list of ensembl_ids
+    :param gene_title: list of gene_titles
+    :param gene_type: list of gene_types
+    :param src: list of gene sources
+    :param table: table to query. This by default points to the siginfo table and normally should not be changed.
+    :param verbose: Print query and table address.
+    :return: Pandas DataFrame
+    """
+
+    if table is None:
+        config = cfg.get_default_config()
+        table = config.tables.geneinfo
+
+    SELECT = "SELECT *"
+    FROM = "FROM {}".format(table)
+
+    CONDITIONS = []
+    if gene_id:
+        gene_id = parse_condition(gene_id)
+        CONDITIONS.append("gene_id in UNNEST({})".format(list(gene_id)))
+    if gene_symbol:
+        gene_symbol = parse_condition(gene_symbol)
+        CONDITIONS.append("gene_symbol in UNNEST({})".format(list(gene_symbol)))
+    if ensembl_id:
+        ensembl_id = parse_condition(ensembl_id)
+        CONDITIONS.append("ensembl_id in UNNEST({})".format(list(ensembl_id)))
+    if gene_title:
+        gene_title = parse_condition(gene_title)
+        CONDITIONS.append("gene_title in UNNEST({})".format(list(gene_title)))
+    if gene_type:
+        gene_type = parse_condition(gene_type)
+        CONDITIONS.append("gene_type in UNNEST({})".format(list(gene_type)))
+
+    if CONDITIONS:
+        WHERE = "WHERE " + " OR ".join(CONDITIONS)
+    else:
+        WHERE = ""
+
+    query = " ".join([SELECT, FROM, WHERE])
+
+    if verbose:
+        print("Table: \n {}".format(table))
+        print("Query:\n {}".format(query))
+
+    return run_query(query, client).result().to_dataframe()
 
 def cmap_sig(
     client,
     sig_id=None,
     pert_id=None,
     pert_iname=None,
+    cell_iname=None,
     build_name=None,
+    return_fields='priority',
     limit=None,
     table=None,
     verbose=False,
@@ -34,17 +222,33 @@ def cmap_sig(
     :param sig_id: list of sig_ids
     :param pert_id: list of pert_ids
     :param pert_iname: list of pert_inames
+    :param cell_iname: list of cell names
     :param build_name: list of builds
+    :param return_fields: ['priority', 'all']
     :param limit: Maximum number of rows to return
     :param table: table to query. This by default points to the level 5 siginfo table and normally should not be changed.
     :param verbose: Print query and table address.
     :return: Pandas Dataframe
     """
+
+    priority_fields = ['sig_id', 'pert_id',
+              'pert_iname', 'pert_type', 'cell_iname',
+              'pert_idose', 'nsample', 'build_name', 'project_code',
+              'ss_ngene', 'cc_q75',
+              'tas']
+
+    if return_fields == 'priority':
+        SELECT = "SELECT " + ",".join(priority_fields)
+    elif return_fields == 'all':
+        SELECT = "SELECT *"
+    else:
+        print("return_fields only takes ['priority', 'all']")
+        sys.exit(1)
+
     if table is None:
         config = cfg.get_default_config()
         table = config.tables.siginfo
 
-    SELECT = "SELECT *"
     FROM = "FROM {}".format(table)
 
     CONDITIONS = []
@@ -54,6 +258,9 @@ def cmap_sig(
     if sig_id:
         sig_id = parse_condition(sig_id)
         CONDITIONS.append("sig_id in UNNEST({})".format(list(sig_id)))
+    if cell_iname:
+        cell_iname = parse_condition(cell_iname)
+        CONDITIONS.append("cell_iname in UNNEST({})".format(list(cell_iname)))
     if pert_iname:
         pert_iname = parse_condition(pert_iname)
         CONDITIONS.append("pert_iname in UNNEST({})".format(list(pert_iname)))
@@ -83,7 +290,9 @@ def cmap_profiles(
     sample_id=None,
     pert_id=None,
     pert_iname=None,
+    cell_iname=None,
     build_name=None,
+    return_fields='priority',
     limit=None,
     table=None,
     verbose=False,
@@ -96,6 +305,7 @@ def cmap_profiles(
     :param pert_id: list of pert_ids
     :param pert_iname: list of pert_inames
     :param build_name: list of builds
+    :param return_fields: ['priority', 'all']
     :param limit: Maximum number of rows to return
     :param table: table to query. This by default points to the siginfo table and normally should not be changed.
     :param verbose: Print query and table address.
@@ -105,7 +315,19 @@ def cmap_profiles(
         config = cfg.get_default_config()
         table = config.tables.instinfo
 
-    SELECT = "SELECT *"
+    priority_fields = ['sample_id', 'det_plate', 'pert_id',
+                  'pert_iname', 'pert_type', 'cell_iname',
+                  'pert_idose', 'build_name', 'project_code']
+
+    if return_fields == 'priority':
+        SELECT = "SELECT " + ",".join(priority_fields)
+    elif return_fields == 'all':
+        SELECT = "SELECT *"
+    else:
+        print("return_fields only takes ['priority', 'all']")
+        sys.exit(1)
+
+
     FROM = "FROM {}".format(table)
 
     CONDITIONS = []
@@ -115,6 +337,9 @@ def cmap_profiles(
     if sample_id:
         sample_id = parse_condition(sample_id)
         CONDITIONS.append("sample_id in UNNEST({})".format(list(sample_id)))
+    if cell_iname:
+        cell_iname = parse_condition(cell_iname)
+        CONDITIONS.append("cell_iname in UNNEST({})".format(list(cell_iname)))
     if pert_iname:
         pert_iname = parse_condition(pert_iname)
         CONDITIONS.append("pert_iname in UNNEST({})".format(list(pert_iname)))
@@ -303,22 +528,16 @@ def get_table_info(client, table_id):
     """
     tok = table_id.split(".")
 
-    print(tok)
     if len(tok) > 1:
         dataset_name = ".".join(tok[0:-1])
         table_name = tok[-1]
     else:
         return NotImplementedError("table_id should be in {dataset}.{table_id} format")
 
-    print(dataset_name)
-    print(table_name)
-
     QUERY = "SELECT column_name, data_type FROM `{}.INFORMATION_SCHEMA.COLUMNS` WHERE table_name='{}'".format(
         dataset_name, table_name
     )
-
     table_desc = run_query(QUERY, client).result().to_dataframe()
-
     return table_desc
 
 
@@ -421,7 +640,7 @@ def list_cmap_targets(client):
     """
     List available targets
     :param client: BigQuery Client
-    :return:
+    :return: Pandas DataFrame
     """
     config = cfg.get_default_config()
     compoundinfo_table = config.tables.compoundinfo
@@ -562,7 +781,6 @@ def download_from_extract_job(extract_job, destination_path):
         filelist.append(os.path.join(destination_path, fn))
 
     return filelist
-
 
 def gunzip_csv(filepaths, destination_path):
     """

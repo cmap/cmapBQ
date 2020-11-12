@@ -10,11 +10,18 @@ from google.auth.exceptions import DefaultCredentialsError
 @dataclass
 class TableDirectory:
     compoundinfo: str
+    genetic_pertinfo: str
+    geneinfo: str
+    cellinfo: str
     instinfo: str
     siginfo: str
     level3: str
     level4: str
     level5: str
+
+    def __str__(self):
+        tables = ["{}: {}".format(attr, getattr(self, attr)) for attr in dir(self) if not attr.startswith('__')]
+        return "\n".join(tables)
 
 
 @dataclass
@@ -32,6 +39,9 @@ def _write_default_config(path):
             "siginfo": "cmap-big-table.cmap_lincs_public_views.siginfo",
             "instinfo": "cmap-big-table.cmap_lincs_public_views.instinfo",
             "compoundinfo": "cmap-big-table.cmap_lincs_public_views.compoundinfo",
+            "geneinfo": "cmap-big-table.cmap_lincs_public_views.geneinfo",
+            "genetic_pertinfo": "cmap-big-table.cmap_lincs_public_views.genetic_pertinfo",
+            "cellinfo": "cmap-big-table.cmap_lincs_public_views.cellinfo",
         },
     }
 
@@ -130,8 +140,14 @@ def get_bq_client(config=None):
         # Will automatically try to get credentials from environment
         return bigquery.Client()
     except DefaultCredentialsError:
-        os.environ["GOOGLE_APPLICATION_CREDENTIALS"] = config.credentials
-        return bigquery.Client()
+        try:
+            os.environ["GOOGLE_APPLICATION_CREDENTIALS"] = config.credentials
+            return bigquery.Client()
+        except DefaultCredentialsError:
+            print(
+                "GOOGLE_APPLICATION_CREDENTIALS not valid, check credentials parameter in ~/.cmapBQ/config.txt"
+            )
+            sys.exit(1)
     except:
         print(
             "GOOGLE_APPLICATION_CREDENTIALS not valid, check credentials parameter in ~/.cmapBQ/config.txt"
