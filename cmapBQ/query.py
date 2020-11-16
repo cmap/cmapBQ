@@ -67,7 +67,7 @@ def cmap_genetic_perts(client,
         CONDITIONS.append("ensemble_id in UNNEST({})".format(list(ensemble_id)))
 
     if CONDITIONS:
-        WHERE = "WHERE " + " OR ".join(CONDITIONS)
+        WHERE = "WHERE " + " AND ".join(CONDITIONS)
     else:
         WHERE = ""
 
@@ -191,7 +191,7 @@ def cmap_genes(client,
         CONDITIONS.append("gene_type in UNNEST({})".format(list(gene_type)))
 
     if CONDITIONS:
-        WHERE = "WHERE " + " OR ".join(CONDITIONS)
+        WHERE = "WHERE " + " AND ".join(CONDITIONS)
     else:
         WHERE = ""
 
@@ -269,7 +269,7 @@ def cmap_sig(
         CONDITIONS.append("build_name in UNNEST({})".format(list(build_name)))
 
     if CONDITIONS:
-        WHERE = "WHERE " + " OR ".join(CONDITIONS)
+        WHERE = "WHERE " + " AND ".join(CONDITIONS)
     else:
         WHERE = ""
 
@@ -348,7 +348,7 @@ def cmap_profiles(
         CONDITIONS.append("build_name in UNNEST({})".format(list(build_name)))
 
     if CONDITIONS:
-        WHERE = "WHERE " + " OR ".join(CONDITIONS)
+        WHERE = "WHERE " + " AND ".join(CONDITIONS)
     else:
         WHERE = ""
 
@@ -418,7 +418,7 @@ def cmap_compounds(
         )
 
     if CONDITIONS:
-        WHERE = "WHERE " + " OR ".join(CONDITIONS)
+        WHERE = "WHERE " + " AND ".join(CONDITIONS)
     else:
         WHERE = ""
 
@@ -522,6 +522,7 @@ def cmap_matrix(
 def get_table_info(client, table_id):
     """
     Query a table address within client's permissions for schema.
+
     :param client: Bigquery Client
     :param table_id: table address as {dataset}.{table_id}
     :return: Pandas Dataframe of column names. Note: Not all column names are query-able but all will be returned from a given metadata table
@@ -616,6 +617,7 @@ def _build_and_launch_query(client, table_id, rid=None, cid=None, verbose=False)
 def _pivot_result(df_long):
     """
     Converts long-form DataFrame to GCToo object
+
     :param df_long: long-form DataFrame
     :return: GCToo Object
     """
@@ -626,6 +628,7 @@ def _pivot_result(df_long):
 def list_cmap_moas(client):
     """
     List available MoAs
+
     :param client: BigQuery Client
     :return: Single column Dataframe of MoAs
     """
@@ -639,6 +642,7 @@ def list_cmap_moas(client):
 def list_cmap_targets(client):
     """
     List available targets
+
     :param client: BigQuery Client
     :return: Pandas DataFrame
     """
@@ -652,6 +656,7 @@ def list_cmap_targets(client):
 def list_cmap_compounds(client):
     """
     List available compounds
+
     :param client: BigQuery Client
     :return: Single column Dataframe of compounds
     """
@@ -785,6 +790,7 @@ def download_from_extract_job(extract_job, destination_path):
 def gunzip_csv(filepaths, destination_path):
     """
     Unzip .gz files
+
     :param filepaths: Path of files with '.gz' extensions
     :param destination_path: folder to place unzipped files
     :return: List of outfile paths
