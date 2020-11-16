@@ -131,7 +131,7 @@ def cmap_cell(client,
         CONDITIONS.append("cell_type in UNNEST({})".format(list(cell_type)))
 
     if CONDITIONS:
-       WHERE = "WHERE " + " OR ".join(CONDITIONS)
+       WHERE = "WHERE " + " AND ".join(CONDITIONS)
     else:
        WHERE = ""
 
@@ -298,7 +298,8 @@ def cmap_profiles(
     verbose=False,
 ):
     """
-    Query per sample metadata, corresponds to level 3 and level 4 data
+    Query per sample metadata, corresponds to level 3 and level 4 data, AND operator used for multiple
+    conditions.
 
     :param client: Bigquery client
     :param sample_id: list of sample_ids
@@ -380,7 +381,7 @@ def cmap_compounds(
 ):
     """
     Query compoundinfo table for various field by providing lists of compounds, moa, targets, etc.
-    'OR' operator used for multiple conditions to be maximally inclusive.
+    'AND' operator used for multiple conditions.
 
     :param client: BigQuery Client
     :param pert_id: List of pert_ids
