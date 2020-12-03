@@ -636,7 +636,12 @@ def list_cmap_moas(client):
     config = cfg.get_default_config()
     compoundinfo_table = config.tables.compoundinfo
 
-    QUERY = "SELECT DISTINCT moa from {}".format(compoundinfo_table)
+    QUERY = ( 'SELECT moa, ' 
+    'COUNT(DISTINCT(pert_id)) AS count ' 
+    'FROM `{}` ' 
+    'GROUP BY moa')
+
+    QUERY = QUERY.format(compoundinfo_table)
     return run_query(QUERY, client).result().to_dataframe()
 
 
@@ -650,7 +655,13 @@ def list_cmap_targets(client):
     config = cfg.get_default_config()
     compoundinfo_table = config.tables.compoundinfo
 
-    QUERY = "SELECT DISTINCT target from {}".format(compoundinfo_table)
+    QUERY = ( 'SELECT target, ' 
+    'COUNT(DISTINCT(pert_id)) AS count ' 
+    'FROM `{}` ' 
+    'GROUP BY target')
+
+    QUERY = QUERY.format(compoundinfo_table)
+
     return run_query(QUERY, client).result().to_dataframe()
 
 
