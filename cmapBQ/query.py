@@ -21,6 +21,15 @@ def list_tables():
     print(config.tables)
     return
 
+def get_bq_client():
+    """
+    Return authenticated BigQuery client object.
+    :param config: optional path to config if not default
+    :return: BigQuery Client
+    """
+    return cfg.get_bq_client()
+
+
 def cmap_genetic_perts(client,
                        pert_id=None,
                        cmap_name=None,
@@ -439,6 +448,7 @@ def cmap_compounds(
 def cmap_matrix(
     client,
     data_level="level5",
+    feature_space="landmark",
     rid=None,
     cid=None,
     verbose=False,
@@ -495,7 +505,11 @@ def cmap_matrix(
             print("Running query ... ({}/{})".format(cur, nparts))
             result_dfs.append(
                 _build_and_launch_query(
-                    client, table_id, cid=cid[start:end], rid=rid, verbose=verbose
+                    client, table_id,
+                    rid=rid,
+                    cid=cid[start:end],
+                    feature_space=feature_space,
+                    verbose=verbose
                 )
             )
 
@@ -543,14 +557,20 @@ def get_table_info(client, table_id):
     return table_desc
 
 
-def _build_query(table_id, rid=None, cid=None):
+def _build_query(table_id, cid=None, rid=None, feature_space="landmark"):
     """
     Crafts and retrieves query from rid and cid conditions. Uses pandas GBQ read_gbq
     to download records from BigQuery as a dataframe object.
 
     :param table_id: Matrix table
-    :param rid: list of row ids (gene space)
     :param cid: list of column ids (samples/sig_ids)
+    :param rid: list of row ids (gene space)
+    :param feature_space: Common featurespaces to extract. 'rid' overrides selection
+            Choices: ['landmark', 'bing', 'aig']
+            landmark: 978 landmark genes
+            bing: Best-inferred set of 10,174 genes
+            aig: All inferred genes including 12,328 genes
+            Default is landmark.
     :return: Long-form DataFrame object
     """
     SELECT = "SELECT cid, rid, value"
@@ -560,6 +580,31 @@ def _build_query(table_id, rid=None, cid=None):
     if rid:
         rids = parse_condition(rid)
         CONDITIONS.append("rid in UNNEST({})".format(list(rids)))
+    else:
+        config = cfg.get_default_config()
+        gene_table = config.tables.geneinfo
+        if feature_space in ["landmark", "bing", "aig"]:
+            if feature_space == "landmark":
+               features_list = ['landmark']
+            elif feature_space == "bing":
+                features_list = ['landmark', 'best inferred']
+            elif feature_space == 'aig':
+                features_list = ['landmark', 'best inferred', 'inferred']
+            else:
+                print("feature space {} unknown. Choices ['landmark', 'bing', 'aig']")
+                sys.exit(1)
+
+            CONDITIONS.append(
+                (
+                "rid in (SELECT CAST(gene_id AS STRING) "
+                "FROM `{}` "
+                "WHERE feature_space in UNNEST({}))"
+                ).format(gene_table, features_list)
+            )
+        else:
+            print("feature space {} unknown. Choices ['landmark', 'bing', 'aig']")
+            sys.exit(1)
+
     if cid:
         cids = parse_condition(cid)
         CONDITIONS.append("cid in UNNEST({})".format(cids))
@@ -574,34 +619,28 @@ def _build_query(table_id, rid=None, cid=None):
     return QUERY
 
 
-def _build_and_launch_query(client, table_id, rid=None, cid=None, verbose=False):
+def _build_and_launch_query(client, table_id, cid=None, rid=None, feature_space="landmark",  verbose=False):
     """
     Crafts and retrieves query from rid and cid conditions. Uses pandas GBQ read_gbq
     to download records from BigQuery as a dataframe object.
 
     :param table_id: Matrix table
-    :param rid: list of row ids (gene space)
     :param cid: list of column ids (samples/sig_ids)
+    :param rid: list of row ids (gene space)
+    :param feature_space: Common featurespaces to extract. 'rid' overrides selection
+        Choices: ['landmark', 'bing', 'aig']
+        landmark: 978 landmark genes
+        bing: Best-inferred set of 10,174 genes
+        aig: All inferred genes including 12,328 genes
+        Default is landmark.
     :param verbose: Shows extra information for debugging
     :return: Long-form DataFrame object
     """
-    SELECT = "SELECT cid, rid, value"
-    FROM = "FROM `{}`".format(table_id)
 
-    CONDITIONS = []
-    if rid:
-        rids = parse_condition(rid)
-        CONDITIONS.append("rid in UNNEST({})".format(list(rids)))
-    if cid:
-        cids = parse_condition(cid)
-        CONDITIONS.append("cid in UNNEST({})".format(cids))
-
-    if CONDITIONS:
-        WHERE = "WHERE " + " AND ".join(CONDITIONS)
-    else:
-        WHERE = ""
-
-    QUERY = " ".join([SELECT, FROM, WHERE])
+    QUERY = _build_query(table_id=table_id,
+                         cid=cid,
+                         rid=rid,
+                         feature_space=feature_space)
 
     if verbose:
         print(QUERY)
