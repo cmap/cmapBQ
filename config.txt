@@ -1,0 +1,8 @@
+credentials: [PATH TO CREDENTIALS]
+tables:
+  level3: cmap-big-table.cmap_lincs_public_views.L1000_Level3
+  level4: cmap-big-table.cmap_lincs_public_views.L1000_Level4
+  level5: cmap-big-table.cmap_lincs_public_views.L1000_Level5
+  siginfo: cmap-big-table.cmap_lincs_public_views.siginfo
+  instinfo: cmap-big-table.cmap_lincs_public_views.instinfo
+  compoundinfo: cmap-big-table.broad_cmap_lincs_data.compoundinfo
