@@ -48,9 +48,9 @@ setup(
         'Programming Language :: Python :: Implementation :: PyPy',
     ],
     project_urls={
-        #'Documentation': 'https://cmapBQ.readthedocs.io/',
+        'Documentation': 'https://cmapBQ.readthedocs.io/',
         #'Changelog': 'https://2020sp-pset-5-NoopDawg.readthedocs.io/en/latest/changelog.html',
-        #'Issue Tracker': 'https://github.com/BQ_toolkit/issues',
+        'Issue Tracker': 'https://github.com/cmap/cmapBQ/issues/',
     },
     python_requires='>=3.6',
     install_requires=[
