@@ -16,14 +16,14 @@ The service account credentials should be placed in the ``~/.cmapBQ`` folder and
 credentials: /path/to/service-credentials.json
 
 
-`Link to BQ notebook
-<https://colab.research.google.com/github/cmap/lincs-workshop-2020/blob/main/BQ_toolkit_demo.ipynb>`_
+`Tutorial Notebook
+<https://colab.research.google.com/github/cmap/lincs-workshop-2020/blob/main/BQ_toolkit_demo.ipynb>`_  available on `Github <https://github.com/cmap/lincs-workshop-2020>`_
 
 
 Credential's setup
 ==================
 
-To be able to access the dataset, you should register for the Google Cloud account. After you have registered or if you already have an account, go to your Google Cloud console and then activate your Google Cloud BigQuery API (link).
+To be able to access the dataset, register for a Google Cloud account. After registration or if you already have an account, go to your Google Cloud console and then activate your Google Cloud BigQuery API (link).
 
 When you have access to your Google Cloud Account, go to APIs & Services > Credentials. Find the +Create Credentials and select “Service Account”
 
