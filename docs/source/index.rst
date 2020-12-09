@@ -35,6 +35,7 @@ Guide
    :maxdepth: 3
 
    cmapBQ
+   setup-guide
    help
    license
    :caption: Contents:

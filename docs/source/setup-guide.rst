@@ -1,0 +1,59 @@
+Using CMap's BQ Toolkit
+=======================
+
+Introduction
+    The cmapBQ toolkit enables access to data hosted in Bigquery directly from a python session.
+
+Instructions for installing cmapBQ
+    
+The cmapBQ package is available on Pypi and can be installed using the command:
+    ``pip install cmapBQ``
+
+
+Where to place your JSON service file 
+
+The service account credentials should be placed in the ``~/.cmapBQ`` folder and the config.txt file within that folder should be edited such that the credentials option points to the path of the service account credentials:
+credentials: /path/to/service-credentials.json
+
+
+`Link to BQ notebook
+<https://colab.research.google.com/github/cmap/lincs-workshop-2020/blob/main/BQ_toolkit_demo.ipynb>`_
+
+
+Credential's setup
+==================
+
+To be able to access the dataset, you should register for the Google Cloud account. After you have registered or if you already have an account, go to your Google Cloud console and then activate your Google Cloud BigQuery API (link).
+
+When you have access to your Google Cloud Account, go to APIs & Services > Credentials. Find the +Create Credentials and select “Service Account”
+
+.. image:: images/create_service_account.png
+  :width: 400
+  :alt: Image not loading. Go to +Create Credentials and select "Service Account"
+
+.. image:: images/set-account-role.png
+  :width: 400
+  :alt: Set Role to BigQuery Job User
+
+Fill out service account details, make sure to set the Role to “BigQuery Job User”
+
+After the service account has been created, find the Section labeled “Keys” and go to Add Key > Create new key. Select “JSON” format.
+
+.. image:: images/create_json_key.png
+  :width: 400
+  :alt: Under Keys, select Add Key > Create new Key. Choose JSON.
+
+
+Place the downloaded JSON file in a safe location, for example, ~/.cmapBQ/ 
+and run the following command in python once. 
+
+.. code-block:: python
+   :emphasize-lines: 3,5
+
+   import cmapBQ.query as cmap_query
+   import cmapBQ.config as cmap_config
+
+   cmap_config.setup_credentials(path_to_json)
+
+
+Note: For usage in Colab, JSON key can be uploaded and referenced from the file viewer in the left side menu
