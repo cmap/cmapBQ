@@ -1,28 +1,44 @@
 # cmapBQ
-Collections of scripts to work with Google BigQuery
+**Author**: Anup Jonchhe (anup@broadinstitute.org)
 
-Author: Anup Jonchhe (anup@broadinstitute.org)
-
-Contains a python package cmapBQ with tools to convert GCT(x) files to parquet, upload to BQ, validate tables against GCT 
-files and sumbit queries to BigQuery
+`cmapBQ` allows for targeted retrieval of relevant gene expression data
+from the resources provided by The Broad Institute and LINCS Project hosted on Google BigQuery.
 
 ## Installation
-cmapBQ can be added to the current virtual environment by running the following command from witin the repo directory
+cmapBQ is available to install through `pip` with the command:
 
-`python setup.py install` 
+`pip install cmapBQ` or `pip install --upgrade cmapBQ`
 
-Note: Updates to the repo are not represented in the venv unless this command is run again in the updated repo directory.
+to get the latest version.
+
+### Credentials Setup
 
 
-## Query
+A Google Cloud Account is necessary to run jobs on BigQuery to retrieve data. 
+A setup guide for obtaining the required JSON credentials key can be found below:
 
-Query related functions can be found within `cmapBQ.query` module. 
+https://cmapbq.readthedocs.io/en/latest/setup-guide.html
 
-## Structure
+### Where to place your JSON service file
+   
+The service account credentials should be placed in the `~/.cmapBQ` folder 
+and the `~/.cmapBQ/config.txt` file should be edited such that the
+credentials option points to the path of the service account credentials:
+    
+    credentials: /path/to/service-credentials.json
 
-Runnable modules are placed within the `cmapBQ/tools` directory. These modules must have a main() function.
+Alternatively, the following command can be run from within a python session after 
+installation. This only needs to be run once
 
-### Tools
+    import cmapBQ.query as cmap_query
+    import cmapBQ.config as cmap_config
+    
+    cmap_config.setup_credentials(path_to_json)
 
-A list of available tools can be found by running the `cmapBQ` command without arguments. All tools should support 
-`cmapBQ [toolname] --help` syntax
+##Tutorials and Documentation
+A demo of `cmapBQ` functionality is available at this [Github repo](https://github.com/cmap/lincs-workshop-2020) 
+and accessible through Colab: 
+
+[cmapBQ Demo Notebook](https://colab.research.google.com/github/cmap/lincs-workshop-2020/blob/main/BQ_toolkit_demo.ipynb)
+
+Documentation is available on ReadTheDocs here: https://cmapbq.readthedocs.io
