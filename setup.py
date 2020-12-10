@@ -31,7 +31,7 @@ setup(
     description="Toolkit for interacting with Google BigQuery and CMAP datasets",
     author='Anup Jonchhe',
     author_email='anup@broadinstitute.org',
-    url='https://github.com/cmap/BQ_toolkit',
+    url='https://github.com/cmap/cmapBQ',
     packages=find_packages(),
     py_modules=[splitext(basename(path))[0] for path in glob('./*.py')],
     include_package_data=True,
@@ -49,10 +49,9 @@ setup(
     ],
     project_urls={
         'Documentation': 'https://cmapBQ.readthedocs.io/',
-        #'Changelog': 'https://2020sp-pset-5-NoopDawg.readthedocs.io/en/latest/changelog.html',
+        #'Homepage': 'https://github.com/cmap/cmapBQ/',
         'Issue Tracker': 'https://github.com/cmap/cmapBQ/issues/',
     },
-    python_requires='>=3.6',
     install_requires=[
         'cmapPy',
         'pandas',

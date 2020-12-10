@@ -22,10 +22,12 @@ It is recommended to place the credentials in the ~/.cmapBQ folder. To complete 
 
  
 .. code-block:: python
-   :emphasize-lines: 3,5
+   :emphasize-lines: 4
 
+   import cmapBQ.query as cmap_query
    import cmapBQ.config as cmap_config
-   cmap_config.setup_credentials('~/.cmapBQ/credentials-file.json') #or path to credentials file
+
+   cmap_config.setup_credentials(path_to_json)
 
 
 Guide

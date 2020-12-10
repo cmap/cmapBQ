@@ -10,11 +10,18 @@ The cmapBQ package is available on Pypi and can be installed using the command:
     ``pip install cmapBQ``
 
 
-Where to place your JSON service file 
+Where to place your JSON service file
+===================================== 
 
-The service account credentials should be placed in the ``~/.cmapBQ`` folder and the config.txt file within that folder should be edited such that the credentials option points to the path of the service account credentials:
-credentials: /path/to/service-credentials.json
+The recommended location for service account credentials is within the ``~/.cmapBQ`` folder. The following command will populate that folder with a config.txt file that points to your credentials file. 
 
+.. code-block:: python
+   :emphasize-lines: 4
+
+   import cmapBQ.query as cmap_query
+   import cmapBQ.config as cmap_config
+
+   cmap_config.setup_credentials(path_to_json)
 
 `Tutorial Notebook
 <https://colab.research.google.com/github/cmap/lincs-workshop-2020/blob/main/BQ_toolkit_demo.ipynb>`_  available on `Github <https://github.com/cmap/lincs-workshop-2020>`_
@@ -25,7 +32,7 @@ Credential's setup
 
 To be able to access the dataset, register for a Google Cloud account. After registration or if you already have an account, go to your Google Cloud console and then activate your Google Cloud BigQuery API (link).
 
-When you have access to your Google Cloud Account, go to APIs & Services > Credentials. Find the +Create Credentials and select “Service Account”
+When you have access to your Google Cloud Account, go to APIs & Services > Credentials. Find the +Create Credentials and select “Service Account”. Note: Depending on your organization or project, you may not have access to the credentials page. If that is the case, discuss with the project admin to get your service account key, or create a new project in which you have permission. 
 
 .. image:: images/create_service_account.png
   :width: 400
