@@ -22,7 +22,7 @@ copyright = '2020, Anup Jonchhe'
 author = 'Anup Jonchhe'
 
 # The full version, including alpha/beta/rc tags
-release = '0.6.8'
+release = '0.6.17'
 
 
 # -- General configuration ---------------------------------------------------
