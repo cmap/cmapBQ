@@ -40,7 +40,6 @@ Guide
    setup-guide
    help
    license
-   :caption: Contents:
 
 
 

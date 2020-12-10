@@ -13,6 +13,6 @@ cmapBQ.query module
 -------------------
 
 .. automodule:: cmapBQ.query
-   :members:
+   :members: cmap_matrix
    :undoc-members:
 
