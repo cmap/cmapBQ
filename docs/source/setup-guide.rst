@@ -13,7 +13,8 @@ The cmapBQ package is available on Pypi and can be installed using the command:
 Where to place your JSON service file
 ===================================== 
 
-The recommended location for service account credentials is within the ``~/.cmapBQ`` folder. The following command will populate that folder with a config.txt file that points to your credentials file. 
+The recommended location for service account credentials is within the ``~/.cmapBQ`` folder.
+The following command will populate that folder with a ``config.txt`` file that points to your credentials file.
 
 .. code-block:: python
    :emphasize-lines: 4
@@ -32,7 +33,10 @@ Credential's setup
 
 To be able to access the dataset, register for a Google Cloud account. After registration or if you already have an account, go to your Google Cloud console and then activate your Google Cloud BigQuery API (link).
 
-When you have access to your Google Cloud Account, go to APIs & Services > Credentials. Find the +Create Credentials and select “Service Account”. Note: Depending on your organization or project, you may not have access to the credentials page. If that is the case, discuss with the project admin to get your service account key, or create a new project in which you have permission. 
+When you have access to your Google Cloud Account, go to APIs & Services > Credentials. Find the +Create Credentials and select “Service Account”.
+
+Note: Depending on your organization or project, you may not have access to the credentials page. If that is the case,
+discuss with the project admin to get your service account key, or create a new project in which you have permission.
 
 .. image:: images/create_service_account.png
   :width: 400
