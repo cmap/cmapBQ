@@ -1,0 +1,7 @@
+#requirements.txt
+pandas
+cmapPy
+pyyaml
+google-cloud-bigquery
+dacite
+pyarrow
