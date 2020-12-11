@@ -26,6 +26,9 @@ class TableDirectory:
 
 @dataclass
 class Configuration:
+    """
+    Data class for configuration of cmapBQ. Object for config.txt
+    """
     credentials: str
     tables: TableDirectory
 
@@ -51,6 +54,13 @@ def _write_default_config(path):
 
 
 def setup_credentials(path_to_credentials):
+    """
+    Setup script for pointing config.txt to a GOOGLE_APPLICATION_CREDENTIALS JSON key.
+    Writes default tables if ~/.cmapBQ/config.txt does not exist.
+
+    :param path_to_credentials:
+    :return: None (side effect)
+    """
     config_path = _get_config_path()
     if not os.path.exists(config_path):
         _write_default_config(config_path)
@@ -83,6 +93,11 @@ def _get_config_path():
 
 
 def get_default_config():
+    """
+    Get configuration object from reading ~/.cmapBQ/config.txt
+
+    :return: cmapBQ.config.Configuration class.
+    """
     config_path = _get_config_path()
 
     try:
@@ -97,7 +112,8 @@ def get_default_config():
 
 
 def _load_config(config_path):
-    """ Read in config file
+    """
+    Read in config file
     :param config_path: path to YAML config file
     :return: Configuration Dataclass
     """
@@ -110,7 +126,8 @@ def _load_config(config_path):
 
 def set_default_config(input_config_path):
     """
-    Change configuration in ~/.cmapBQ to input config path
+    Change configuration in ~/.cmapBQ to input config path. Overwrites ~/.cmapBQ/config.txt.,
+
     :param input_config_path: valid YAML formatted config file
     :return: location in ~/.cmapBQ
     """
@@ -128,6 +145,7 @@ def set_default_config(input_config_path):
 def get_bq_client(config=None):
     """
     Return authenticated BigQuery client object.
+
     :param config: optional path to config if not default
     :return: BigQuery Client
     """

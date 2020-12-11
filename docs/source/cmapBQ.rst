@@ -13,6 +13,12 @@ cmapBQ.query module
 -------------------
 
 .. automodule:: cmapBQ.query
-   :members: cmap_matrix
+   :members: 
    :undoc-members:
 
+cmapBQ.utils module
+-------------------
+
+.. automodule:: cmapBQ.utils
+   :members: long_to_gctx, csv_to_gctx
+   :no-undoc-members:

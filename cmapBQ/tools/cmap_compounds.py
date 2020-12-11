@@ -8,7 +8,6 @@ from google.auth import exceptions
 from cmapBQ.utils import write_args, write_status, mk_out_dir, str2bool
 from cmapBQ.query import cmap_compounds
 
-
 def parse_args(argv):
     parser = argparse.ArgumentParser(
         description="Query Compound Info table for MoA, Target, BRD information"

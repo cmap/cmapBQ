@@ -11,8 +11,6 @@ from cmapPy.pandasGEXpress.write_gctx import write as write_gctx
 from cmapPy.pandasGEXpress.write_gct import write as write_gct
 
 
-
-
 def parse_condition(arg, sep=","):
     """
     Parse argument for pathname, string or list. If file path exists reads GRP or TXT file.
@@ -29,7 +27,6 @@ def parse_condition(arg, sep=","):
         else:
             arg = arg.split(sep=sep)
     return list(arg)
-
 
 def str2bool(v):
     if isinstance(v, bool):
