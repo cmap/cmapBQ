@@ -31,7 +31,9 @@ The following command will populate that folder with a ``config.txt`` file that 
 Credential's setup
 ==================
 
-To be able to access the dataset, register for a Google Cloud account. After registration or if you already have an account, go to your Google Cloud console and then activate your Google Cloud BigQuery API (link).
+To be able to access the dataset, register for a Google Cloud account.
+After registration or if you already have an account, go to your Google Cloud console
+ and then activate your Google Cloud BigQuery API `(link) <https://console.cloud.google.com/apis/library/bigquery.googleapis.com>`.
 
 When you have access to your Google Cloud Account, go to APIs & Services > Credentials. Find the +Create Credentials and select “Service Account”.
 
@@ -59,7 +61,7 @@ Place the downloaded JSON file in a safe location, for example, ~/.cmapBQ/
 and run the following command in python once. 
 
 .. code-block:: python
-   :emphasize-lines: 3,5
+   :emphasize-lines: 4
 
    import cmapBQ.query as cmap_query
    import cmapBQ.config as cmap_config

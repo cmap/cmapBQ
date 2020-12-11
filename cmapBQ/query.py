@@ -17,6 +17,11 @@ from .utils import long_to_gctx, parse_condition
 from cmapPy.pandasGEXpress.concat import hstack
 
 def list_tables():
+    """
+    Print table addresses. Comes from defaults in config.
+
+    :return: None
+    """
     config = cfg.get_default_config()
     print(config.tables)
     return
@@ -24,10 +29,62 @@ def list_tables():
 def get_bq_client():
     """
     Return authenticated BigQuery client object.
+
     :param config: optional path to config if not default
     :return: BigQuery Client
     """
     return cfg.get_bq_client()
+
+def list_cmap_moas(client):
+    """
+    List available MoAs
+
+    :param client: BigQuery Client
+    :return: Single column Dataframe of MoAs
+    """
+    config = cfg.get_default_config()
+    compoundinfo_table = config.tables.compoundinfo
+
+    QUERY = ( 'SELECT moa, ' 
+    'COUNT(DISTINCT(pert_id)) AS count ' 
+    'FROM `{}` ' 
+    'GROUP BY moa')
+
+    QUERY = QUERY.format(compoundinfo_table)
+    return run_query(client, QUERY).result().to_dataframe()
+
+
+def list_cmap_targets(client):
+    """
+    List available targets
+
+    :param client: BigQuery Client
+    :return: Pandas DataFrame
+    """
+    config = cfg.get_default_config()
+    compoundinfo_table = config.tables.compoundinfo
+
+    QUERY = ( 'SELECT target, ' 
+    'COUNT(DISTINCT(pert_id)) AS count ' 
+    'FROM `{}` ' 
+    'GROUP BY target')
+
+    QUERY = QUERY.format(compoundinfo_table)
+
+    return run_query(client, QUERY).result().to_dataframe()
+
+
+def list_cmap_compounds(client):
+    """
+    List available compounds
+
+    :param client: BigQuery Client
+    :return: Single column Dataframe of compounds
+    """
+    config = cfg.get_default_config()
+    compoundinfo_table = config.tables.compoundinfo
+    QUERY = "SELECT DISTINCT cmap_name from {}".format(compoundinfo_table)
+    return run_query(client, QUERY).result().to_dataframe()
 
 
 def cmap_genetic_perts(client,
@@ -86,7 +143,7 @@ def cmap_genetic_perts(client,
         print("Table: \n {}".format(table))
         print("Query:\n {}".format(query))
 
-    return run_query(query, client).result().to_dataframe()
+    return run_query(client, query).result().to_dataframe()
 
 
 def cmap_cell(client,
@@ -150,7 +207,7 @@ def cmap_cell(client,
        print("Table: \n {}".format(table))
        print("Query:\n {}".format(query))
 
-    return run_query(query, client).result().to_dataframe()
+    return run_query(client, query).result().to_dataframe()
 
 def cmap_genes(client,
                gene_id=None,
@@ -210,7 +267,7 @@ def cmap_genes(client,
         print("Table: \n {}".format(table))
         print("Query:\n {}".format(query))
 
-    return run_query(query, client).result().to_dataframe()
+    return run_query(client, query).result().to_dataframe()
 
 def cmap_sig(
     client,
@@ -291,7 +348,7 @@ def cmap_sig(
         print("Table: \n {}".format(table))
         print("Query:\n {}".format(query))
 
-    return run_query(query, client).result().to_dataframe()
+    return run_query(client, query).result().to_dataframe()
 
 
 def cmap_profiles(
@@ -375,7 +432,7 @@ def cmap_profiles(
         print("Table: \n {}".format(table))
         print("Query:\n {}".format(query))
 
-    return run_query(query, client).result().to_dataframe()
+    return run_query(client, query).result().to_dataframe()
 
 
 def cmap_compounds(
@@ -442,7 +499,7 @@ def cmap_compounds(
         print("Table: \n {}".format(compoundinfo_table))
         print("Query:\n {}".format(query))
 
-    return run_query(query, client).result().to_dataframe()
+    return run_query(client, query).result().to_dataframe()
 
 
 def cmap_matrix(
@@ -553,7 +610,7 @@ def get_table_info(client, table_id):
     QUERY = "SELECT column_name, data_type FROM `{}.INFORMATION_SCHEMA.COLUMNS` WHERE table_name='{}'".format(
         dataset_name, table_name
     )
-    table_desc = run_query(QUERY, client).result().to_dataframe()
+    table_desc = run_query(client, QUERY).result().to_dataframe()
     return table_desc
 
 
@@ -652,7 +709,7 @@ def _build_and_launch_query(client, table_id, cid=None, rid=None, feature_space=
         print(
             "Pandas read_gbq may not be installed... Running query but no progress indicator available."
         )
-        return run_query(QUERY, client).result().to_dataframe()
+        return run_query(client, QUERY).result().to_dataframe()
 
 
 def _pivot_result(df_long):
@@ -665,90 +722,15 @@ def _pivot_result(df_long):
     gctoo = long_to_gctx(df_long)
     return gctoo
 
-
-def list_cmap_moas(client):
+def run_query(client, query):
     """
-    List available MoAs
+    Runs BigQuery queryjob
 
-    :param client: BigQuery Client
-    :return: Single column Dataframe of MoAs
+    :param client: BigQuery client object
+    :param query: Query to run as a string
+    :return: QueryJob object
     """
-    config = cfg.get_default_config()
-    compoundinfo_table = config.tables.compoundinfo
-
-    QUERY = ( 'SELECT moa, ' 
-    'COUNT(DISTINCT(pert_id)) AS count ' 
-    'FROM `{}` ' 
-    'GROUP BY moa')
-
-    QUERY = QUERY.format(compoundinfo_table)
-    return run_query(QUERY, client).result().to_dataframe()
-
-
-def list_cmap_targets(client):
-    """
-    List available targets
-
-    :param client: BigQuery Client
-    :return: Pandas DataFrame
-    """
-    config = cfg.get_default_config()
-    compoundinfo_table = config.tables.compoundinfo
-
-    QUERY = ( 'SELECT target, ' 
-    'COUNT(DISTINCT(pert_id)) AS count ' 
-    'FROM `{}` ' 
-    'GROUP BY target')
-
-    QUERY = QUERY.format(compoundinfo_table)
-
-    return run_query(QUERY, client).result().to_dataframe()
-
-
-def list_cmap_compounds(client):
-    """
-    List available compounds
-
-    :param client: BigQuery Client
-    :return: Single column Dataframe of compounds
-    """
-    config = cfg.get_default_config()
-    compoundinfo_table = config.tables.compoundinfo
-    QUERY = "SELECT DISTINCT cmap_name from {}".format(compoundinfo_table)
-    return run_query(QUERY, client).result().to_dataframe()
-
-
-def extract_matrix_GCS(query, destination_table=None, storage_uri=None, out_path=None):
-    """
-
-    Run a BigQuery query using Google Cloud Storage to export table as CSV. Downloads exported CSVs to out_path/csv/.
-    This function was meant as a step in a deprecated matrix download process.
-
-    :param query: Query String
-    :param destination_table: Store as BQ table
-    :param storage_uri: GCS Location
-    :param out_path: outpath on file system
-    :return: list of csvs
-    """
-    bigquery_client = cfg.get_bq_client()
-
-    # run query
-    query_job = run_query(query, bigquery_client, destination_table)
-    # extract table to GCS
-    extract_job = export_table(query_job, bigquery_client, storage_uri=storage_uri)
-    # download from GCS
-    csv_path = os.path.join(out_path, "csv")
-    cnt = 0
-    while os.path.exists(csv_path):
-        csv_path = os.path.join(out_path, "csv{}".format(cnt))
-        cnt += 1
-    os.mkdir(csv_path)
-
-    file_list = download_from_extract_job(extract_job, csv_path)
-    file_list = gunzip_csv(file_list, csv_path)
-
-    return file_list
-
+    return client.query(query)
 
 def _run_query_create_log(query, client, destination_table=None):
     """
@@ -773,17 +755,38 @@ def _run_query_create_log(query, client, destination_table=None):
     job_config.create_disposition = "CREATE_IF_NEEDED"
     return client.query(query, job_config=job_config)
 
-def run_query(query, client):
+def _extract_matrix_GCS(query, destination_table=None, storage_uri=None, out_path=None):
     """
-    Runs BigQuery queryjob
 
-    :param query: Query to run as a string
-    :param client: BigQuery client object
-    :return: QueryJob object
+    Run a BigQuery query using Google Cloud Storage to export table as CSV. Downloads exported CSVs to out_path/csv/.
+    This function was meant as a step in a deprecated matrix download process.
+
+    :param query: Query String
+    :param destination_table: Store as BQ table
+    :param storage_uri: GCS Location
+    :param out_path: outpath on file system
+    :return: list of csvs
     """
-    return client.query(query)
+    bigquery_client = cfg.get_bq_client()
 
-def export_table(query_job, client, storage_uri=None):
+    # run query
+    query_job = run_query(bigquery_client, query)
+    # extract table to GCS
+    extract_job = _export_table(query_job, bigquery_client, storage_uri=storage_uri)
+    # download from GCS
+    csv_path = os.path.join(out_path, "csv")
+    cnt = 0
+    while os.path.exists(csv_path):
+        csv_path = os.path.join(out_path, "csv{}".format(cnt))
+        cnt += 1
+    os.mkdir(csv_path)
+
+    file_list = _download_from_extract_job(extract_job, csv_path)
+    file_list = _gunzip_csv(file_list, csv_path)
+
+    return file_list
+
+def _export_table(query_job, client, storage_uri=None):
     """
     Extract result of a QueryJob object to location in GCS.
 
@@ -811,8 +814,7 @@ def export_table(query_job, client, storage_uri=None):
     extract_job.result()
     return extract_job
 
-
-def download_from_extract_job(extract_job, destination_path):
+def _download_from_extract_job(extract_job, destination_path):
     """
     Downloads a blob from the ExtractJob
 
@@ -839,7 +841,7 @@ def download_from_extract_job(extract_job, destination_path):
 
     return filelist
 
-def gunzip_csv(filepaths, destination_path):
+def _gunzip_csv(filepaths, destination_path):
     """
     Unzip .gz files
 
