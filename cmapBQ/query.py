@@ -106,7 +106,7 @@ def cmap_genetic_perts(client,
     :param ensemble_id: List of ensumble_ids
     :param table: table to query. This by default points to the siginfo table and normally should not be changed.
     :param verbose: Print query and table address.
-    :return:
+    :return: Pandas DataFrame
     """
     if table is None:
         config = cfg.get_default_config()
