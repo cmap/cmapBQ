@@ -211,31 +211,6 @@ def cmap_cell(client,
 
 
 
-def _get_feature_space_condition(feature_space):
-    config = cfg.get_default_config()
-    gene_table = config.tables.geneinfo
-    if feature_space in ["landmark", "bing", "aig"]:
-        if feature_space == "landmark":
-           features_list = ['landmark']
-        elif feature_space == "bing":
-            features_list = ['landmark', 'best inferred']
-        elif feature_space == 'aig':
-            features_list = ['landmark', 'best inferred', 'inferred']
-        else:
-            print("feature space {} unknown. Choices ['landmark', 'bing', 'aig']")
-            sys.exit(1)
-
-        CONDITION = (
-            "rid in (SELECT CAST(gene_id AS STRING) "
-            "FROM `{}` "
-            "WHERE feature_space in UNNEST({}))"
-            ).format(gene_table, features_list)
-        return CONDITION
-    else:
-        print("feature space {} unknown. Choices ['landmark', 'bing', 'aig']")
-        sys.exit(1)
-
-
 def cmap_genes(client,
                gene_id=None,
                gene_symbol=None,
@@ -297,7 +272,7 @@ def cmap_genes(client,
         gene_type = parse_condition(gene_type)
         CONDITIONS.append("gene_type in UNNEST({})".format(list(gene_type)))
     if feature_space:
-        CONDITIONS.append(_get_feature_space_condition(feature_space))
+        CONDITIONS.append("feature_space in UNNEST({})".format(list(_get_feature_list(feature_space))))
 
     if CONDITIONS:
         WHERE = "WHERE " + " AND ".join(CONDITIONS)
@@ -545,6 +520,34 @@ def cmap_compounds(
     return run_query(client, query).result().to_dataframe()
 
 
+def _get_feature_list(feature_space):
+    if feature_space in ["landmark", "bing", "aig"]:
+        if feature_space == "landmark":
+           features_list = ['landmark']
+        elif feature_space == "bing":
+            features_list = ['landmark', 'best inferred']
+        elif feature_space == 'aig':
+            features_list = ['landmark', 'best inferred', 'inferred']
+        else:
+            print("feature space {} unknown. Choices ['landmark', 'bing', 'aig']")
+            sys.exit(1)
+        return features_list
+    else:
+        print("feature space {} unknown. Choices ['landmark', 'bing', 'aig']")
+        sys.exit(1)
+
+def _get_feature_space_condition(feature_space):
+    config = cfg.get_default_config()
+    gene_table = config.tables.geneinfo
+    CONDITION = (
+        "rid in (SELECT CAST(gene_id AS STRING) "
+        "FROM `{}` "
+        "WHERE feature_space in UNNEST({}))"
+        ).format(gene_table, _get_feature_list(feature_space))
+    return CONDITION
+
+
+
 def cmap_matrix(
     client,
     data_level="level5",
@@ -666,8 +669,6 @@ def get_table_info(client, table_id):
     table_desc = run_query(client, QUERY).result().to_dataframe()
     return table_desc
 
-
-
 def _build_query(table_id, cid=None, rid=None, feature_space="landmark"):
     """
     Crafts and retrieves query from rid and cid conditions. Uses pandas GBQ read_gbq
@@ -707,7 +708,6 @@ def _build_query(table_id, cid=None, rid=None, feature_space="landmark"):
 
     return QUERY
 
-
 def _build_and_launch_query(client, table_id, cid=None, rid=None, feature_space="landmark",  verbose=False):
     """
     Crafts and retrieves query from rid and cid conditions. Uses pandas GBQ read_gbq
@@ -741,7 +741,6 @@ def _build_and_launch_query(client, table_id, cid=None, rid=None, feature_space=
             "Pandas read_gbq may not be installed... Running query but no progress indicator available."
         )
         return run_query(client, QUERY).result().to_dataframe()
-
 
 def _pivot_result(df_long):
     """
