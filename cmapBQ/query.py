@@ -257,10 +257,15 @@ def cmap_genes(client,
     :param gene_title: list of gene_titles
     :param gene_type: list of gene_types
     :param feature_space: Common featurespaces to extract. 'rid' overrides selection
+
                 Choices: ['landmark', 'bing', 'aig']
+
                 landmark: 978 landmark genes
+
                 bing: Best-inferred set of 10,174 genes
+
                 aig: All inferred genes including 12,328 genes
+
                 Default is landmark.
     :param src: list of gene sources
     :param table: table to query. This by default points to the siginfo table and normally should not be changed.
@@ -560,10 +565,15 @@ def cmap_matrix(
     :param rid: Row ids
     :param cid: Column ids
     :param feature_space: Common featurespaces to extract. 'rid' overrides selection
+
                 Choices: ['landmark', 'bing', 'aig']
+
                 landmark: 978 landmark genes
+
                 bing: Best-inferred set of 10,174 genes
+
                 aig: All inferred genes including 12,328 genes
+
                 Default is landmark.
     :param chunk_size: Runs queries in stages to avoid query character limit. Default 1,000
     :param table: Table address to query. Overrides 'data_level' parameter. Generally should not be used.
