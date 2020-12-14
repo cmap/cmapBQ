@@ -209,16 +209,46 @@ def cmap_cell(client,
 
     return run_query(client, query).result().to_dataframe()
 
+
+
+def _get_feature_space_condition(feature_space):
+    config = cfg.get_default_config()
+    gene_table = config.tables.geneinfo
+    if feature_space in ["landmark", "bing", "aig"]:
+        if feature_space == "landmark":
+           features_list = ['landmark']
+        elif feature_space == "bing":
+            features_list = ['landmark', 'best inferred']
+        elif feature_space == 'aig':
+            features_list = ['landmark', 'best inferred', 'inferred']
+        else:
+            print("feature space {} unknown. Choices ['landmark', 'bing', 'aig']")
+            sys.exit(1)
+
+        CONDITION = (
+            "rid in (SELECT CAST(gene_id AS STRING) "
+            "FROM `{}` "
+            "WHERE feature_space in UNNEST({}))"
+            ).format(gene_table, features_list)
+        return CONDITION
+    else:
+        print("feature space {} unknown. Choices ['landmark', 'bing', 'aig']")
+        sys.exit(1)
+
+
 def cmap_genes(client,
                gene_id=None,
                gene_symbol=None,
                ensembl_id=None,
                gene_title = None,
                gene_type=None,
-               src=None, table=None,
+               feature_space="landmark",
+               src=None,
+               table=None,
                verbose=False):
     """
-    Query geneinfo table. geneinfo contains information about
+    Query geneinfo table. Geneinfo contains information about genes including
+    ids, symbols, types, ensembl_ids, etc.
 
     :param client: Bigquery Client
     :param gene_id: list of gene_ids
@@ -226,6 +256,12 @@ def cmap_genes(client,
     :param ensembl_id:  list of ensembl_ids
     :param gene_title: list of gene_titles
     :param gene_type: list of gene_types
+    :param feature_space: Common featurespaces to extract. 'rid' overrides selection
+                Choices: ['landmark', 'bing', 'aig']
+                landmark: 978 landmark genes
+                bing: Best-inferred set of 10,174 genes
+                aig: All inferred genes including 12,328 genes
+                Default is landmark.
     :param src: list of gene sources
     :param table: table to query. This by default points to the siginfo table and normally should not be changed.
     :param verbose: Print query and table address.
@@ -255,6 +291,8 @@ def cmap_genes(client,
     if gene_type:
         gene_type = parse_condition(gene_type)
         CONDITIONS.append("gene_type in UNNEST({})".format(list(gene_type)))
+    if feature_space:
+        CONDITIONS.append(_get_feature_space_condition(feature_space))
 
     if CONDITIONS:
         WHERE = "WHERE " + " AND ".join(CONDITIONS)
@@ -521,7 +559,12 @@ def cmap_matrix(
      in 'level3' and 'level4'. Choices are ['level5', 'level4', 'level3']
     :param rid: Row ids
     :param cid: Column ids
-    :param verbose: Run in verbose mode
+    :param feature_space: Common featurespaces to extract. 'rid' overrides selection
+                Choices: ['landmark', 'bing', 'aig']
+                landmark: 978 landmark genes
+                bing: Best-inferred set of 10,174 genes
+                aig: All inferred genes including 12,328 genes
+                Default is landmark.
     :param chunk_size: Runs queries in stages to avoid query character limit. Default 1,000
     :param table: Table address to query. Overrides 'data_level' parameter. Generally should not be used.
     :param verbose: Print query and table address.
@@ -639,29 +682,7 @@ def _build_query(table_id, cid=None, rid=None, feature_space="landmark"):
         rids = parse_condition(rid)
         CONDITIONS.append("rid in UNNEST({})".format(list(rids)))
     else:
-        config = cfg.get_default_config()
-        gene_table = config.tables.geneinfo
-        if feature_space in ["landmark", "bing", "aig"]:
-            if feature_space == "landmark":
-               features_list = ['landmark']
-            elif feature_space == "bing":
-                features_list = ['landmark', 'best inferred']
-            elif feature_space == 'aig':
-                features_list = ['landmark', 'best inferred', 'inferred']
-            else:
-                print("feature space {} unknown. Choices ['landmark', 'bing', 'aig']")
-                sys.exit(1)
-
-            CONDITIONS.append(
-                (
-                "rid in (SELECT CAST(gene_id AS STRING) "
-                "FROM `{}` "
-                "WHERE feature_space in UNNEST({}))"
-                ).format(gene_table, features_list)
-            )
-        else:
-            print("feature space {} unknown. Choices ['landmark', 'bing', 'aig']")
-            sys.exit(1)
+        CONDITIONS.append(_get_feature_space_condition(feature_space))
 
     if cid:
         cids = parse_condition(cid)
