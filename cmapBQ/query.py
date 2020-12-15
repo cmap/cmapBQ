@@ -535,11 +535,11 @@ def _get_feature_list(feature_space):
         elif feature_space == 'aig':
             features_list = ['landmark', 'best inferred', 'inferred']
         else:
-            print("feature space {} unknown. Choices ['landmark', 'bing', 'aig']")
+            print("feature space {} unknown. Choices ['landmark', 'bing', 'aig']".format(feature_space))
             sys.exit(1)
         return features_list
     else:
-        print("feature space {} unknown. Choices ['landmark', 'bing', 'aig']")
+        print("feature space {} unknown. Choices ['landmark', 'bing', 'aig']".format(feature_space))
         sys.exit(1)
 
 def _get_feature_space_condition(feature_space):
