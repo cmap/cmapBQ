@@ -286,6 +286,7 @@ def cmap_sig(
     client,
     sig_id=None,
     pert_id=None,
+    pert_type=None,
     cmap_name=None,
     cell_iname=None,
     det_plates=None,
@@ -296,11 +297,12 @@ def cmap_sig(
     verbose=False,
 ):
     """
-    Query level 5 metadata table
+    Query level 5 metadata table. Multiple parameters are filtered using the 'AND' operator
 
     :param client: Bigquery Client
     :param sig_id: list of sig_ids
     :param pert_id: list of pert_ids
+    :param pert_type: list of pert_types. Avoid using only this parameter as the return could be very large.
     :param cmap_name: list of cmap_name, formerly pert_iname
     :param cell_iname: list of cell names
     :param det_plates: list of det_plates. det_plates values are the concatenation of values from
@@ -337,6 +339,9 @@ def cmap_sig(
     if pert_id:
         pert_id = parse_condition(pert_id)
         CONDITIONS.append("pert_id in UNNEST({})".format(list(pert_id)))
+    if pert_type:
+        pert_type = parse_condition(pert_type)
+        CONDITIONS.append("pert_type in UNNEST({})".format(list(pert_type)))
     if sig_id:
         sig_id = parse_condition(sig_id)
         CONDITIONS.append("sig_id in UNNEST({})".format(list(sig_id)))
@@ -374,6 +379,7 @@ def cmap_profiles(
     client,
     sample_id=None,
     pert_id=None,
+    pert_type=None,
     cmap_name=None,
     cell_iname=None,
     det_plate=None,
@@ -390,6 +396,7 @@ def cmap_profiles(
     :param client: Bigquery client
     :param sample_id: list of sample_ids
     :param pert_id: list of pert_ids
+    :param pert_type: list of pert_types. Avoid using only this parameter as the return could be very large.
     :param cmap_name: list of cmap_names
     :param det_plate: list of det_plates
     :param build_name: list of builds
@@ -422,6 +429,9 @@ def cmap_profiles(
     if pert_id:
         pert_id = parse_condition(pert_id)
         CONDITIONS.append("pert_id in UNNEST({})".format(list(pert_id)))
+    if pert_type:
+        pert_type = parse_condition(pert_type)
+        CONDITIONS.append("pert_type in UNNEST({})".format(list(pert_type)))
     if sample_id:
         sample_id = parse_condition(sample_id)
         CONDITIONS.append("sample_id in UNNEST({})".format(list(sample_id)))
