@@ -293,6 +293,7 @@ def cmap_sig(
     pert_id=None,
     cmap_name=None,
     cell_iname=None,
+    det_plates=None,
     build_name=None,
     return_fields='priority',
     limit=None,
@@ -307,6 +308,8 @@ def cmap_sig(
     :param pert_id: list of pert_ids
     :param cmap_name: list of cmap_name, formerly pert_iname
     :param cell_iname: list of cell names
+    :param det_plates: list of det_plates. det_plates values are the concatenation of values from
+    instinfo det_plate field with the '|' delimiter used.
     :param build_name: list of builds
     :param return_fields: ['priority', 'all']
     :param limit: Maximum number of rows to return
@@ -317,7 +320,7 @@ def cmap_sig(
 
     priority_fields = ['sig_id', 'pert_id',
               'cmap_name', 'pert_type', 'cell_iname',
-              'pert_idose', 'nsample', 'build_name', 'project_code',
+              'pert_idose', 'nsample', 'det_plates', 'build_name', 'project_code',
               'ss_ngene', 'cc_q75',
               'tas']
 
@@ -348,6 +351,9 @@ def cmap_sig(
     if cmap_name:
         cmap_name = parse_condition(cmap_name)
         CONDITIONS.append("cmap_name in UNNEST({})".format(list(cmap_name)))
+    if det_plates:
+        det_plates = parse_condition(det_plates)
+        CONDITIONS.append("det_plates in UNNEST({})".format(list(det_plates)))
     if build_name:
         build_name = parse_condition(build_name)
         CONDITIONS.append("build_name in UNNEST({})".format(list(build_name)))
@@ -375,6 +381,7 @@ def cmap_profiles(
     pert_id=None,
     cmap_name=None,
     cell_iname=None,
+    det_plate=None,
     build_name=None,
     return_fields='priority',
     limit=None,
@@ -388,7 +395,8 @@ def cmap_profiles(
     :param client: Bigquery client
     :param sample_id: list of sample_ids
     :param pert_id: list of pert_ids
-    :param cmap_name: list of cmap_name
+    :param cmap_name: list of cmap_names
+    :param det_plate: list of det_plates
     :param build_name: list of builds
     :param return_fields: ['priority', 'all']
     :param limit: Maximum number of rows to return
@@ -402,7 +410,7 @@ def cmap_profiles(
 
     priority_fields = ['sample_id', 'det_plate', 'pert_id',
                   'cmap_name', 'pert_type', 'cell_iname',
-                  'pert_idose', 'build_name', 'project_code']
+                  'pert_idose', 'det_plate', 'build_name', 'project_code']
 
     if return_fields == 'priority':
         SELECT = "SELECT " + ",".join(priority_fields)
@@ -428,6 +436,9 @@ def cmap_profiles(
     if cmap_name:
         cmap_name = parse_condition(cmap_name)
         CONDITIONS.append("cmap_name in UNNEST({})".format(list(cmap_name)))
+    if det_plate:
+        det_plate = parse_condition(det_plate)
+        CONDITIONS.append("det_plate in UNNEST({})".format(list(det_plate)))
     if build_name:
         build_name = parse_condition(build_name)
         CONDITIONS.append("build_name in UNNEST({})".format(list(build_name)))
@@ -545,8 +556,6 @@ def _get_feature_space_condition(feature_space):
         "WHERE feature_space in UNNEST({}))"
         ).format(gene_table, _get_feature_list(feature_space))
     return CONDITION
-
-
 
 def cmap_matrix(
     client,
