@@ -5,6 +5,7 @@ Introduction
     The cmapBQ toolkit enables access to data hosted in Bigquery directly from a python session.
 
 Instructions for installing cmapBQ
+==================================
     
 The cmapBQ package is available on Pypi and can be installed using the command:
     ``pip install cmapBQ``
@@ -33,7 +34,7 @@ Credential's setup
 
 To be able to access the dataset, register for a Google Cloud account.
 After registration or if you already have an account, go to your Google Cloud console
- and then activate your Google Cloud BigQuery API `(link) <https://console.cloud.google.com/apis/library/bigquery.googleapis.com>`.
+and then activate your Google Cloud BigQuery API `(link) <https://console.cloud.google.com/apis/library/bigquery.googleapis.com>`_.
 
 When you have access to your Google Cloud Account, go to APIs & Services > Credentials. Find the +Create Credentials and select “Service Account”.
 
