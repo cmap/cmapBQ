@@ -576,7 +576,7 @@ def cmap_matrix(
     verbose=False,
     chunk_size=1000,
     table=None,
-    limit=1000,
+    limit=4000,
 ):
     """
     Query for numerical data for signature-gene level data.
@@ -598,6 +598,7 @@ def cmap_matrix(
 
                 Default is landmark.
     :param chunk_size: Runs queries in stages to avoid query character limit. Default 1,000
+    :param limit: Soft limit for number of signatures allowed. Default is 4,000.
     :param table: Table address to query. Overrides 'data_level' parameter. Generally should not be used.
     :param verbose: Print query and table address.
     :return: GCToo object
