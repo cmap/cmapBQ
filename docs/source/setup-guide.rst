@@ -26,7 +26,10 @@ The following command will populate that folder with a ``config.txt`` file that 
    cmap_config.setup_credentials(path_to_json)
 
 `Tutorial Notebook
-<https://colab.research.google.com/github/cmap/lincs-workshop-2020/blob/main/BQ_toolkit_demo.ipynb>`_  available on `Github <https://github.com/cmap/lincs-workshop-2020>`_
+<https://colab.research.google.com/github/cmap/lincs-workshop-2020/blob/main/notebooks/data_access/cmapBQ_Tutorial.ipynb>`_  and
+`Demo Notebook
+<https://colab.research.google.com/github/cmap/lincs-workshop-2020/blob/main/notebooks/data_access/BQ_toolkit_demo.ipynb>`_  available on
+`Github <https://github.com/cmap/lincs-workshop-2020>`_
 
 
 Credential's setup
