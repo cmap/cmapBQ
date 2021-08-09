@@ -31,18 +31,13 @@ def list_tables():
 def get_bq_client():
     """
     Return authenticated BigQuery client object.
-<<<<<<< HEAD
-=======
 
->>>>>>> develop
     :param config: optional path to config if not default
     :return: BigQuery Client
     """
     return cfg.get_bq_client()
 
 
-<<<<<<< HEAD
-=======
 def list_cmap_moas(client):
     """
     List available MoAs
@@ -95,7 +90,6 @@ def list_cmap_compounds(client):
     return run_query(client, QUERY).result().to_dataframe()
 
 
->>>>>>> develop
 def cmap_genetic_perts(client,
                        pert_id=None,
                        cmap_name=None,
@@ -648,17 +642,6 @@ def _get_numerical_table_id(table=None, data_level="level5", feature_space="land
 
 
 def cmap_matrix(
-<<<<<<< HEAD
-    client,
-    data_level="level5",
-    feature_space="landmark",
-    rid=None,
-    cid=None,
-    verbose=False,
-    chunk_size=1000,
-    table=None,
-    limit=1000,
-=======
         client,
         data_level="level5",
         feature_space="landmark",
@@ -668,7 +651,6 @@ def cmap_matrix(
         chunk_size=1000,
         table=None,
         limit=4000,
->>>>>>> develop
 ):
     """
     Query for numerical data for signature-gene level data.
@@ -744,8 +726,6 @@ def cmap_matrix(
                     cid=cid[start:end],
                     feature_space=feature_space,
                     verbose=verbose
-<<<<<<< HEAD
-=======
                 )
             )
 
@@ -796,7 +776,6 @@ def cmap_matrix(
                     cid=cid,
                     feature_space=feature_space,
                     verbose=verbose
->>>>>>> develop
                 )
             )
 
@@ -844,10 +823,6 @@ def get_table_info(client, table_id):
     return table_desc
 
 
-<<<<<<< HEAD
-
-=======
->>>>>>> develop
 def _build_query(table_id, cid=None, rid=None, feature_space="landmark"):
     """
     Crafts and retrieves query from rid and cid conditions. Uses pandas GBQ read_gbq
@@ -872,33 +847,7 @@ def _build_query(table_id, cid=None, rid=None, feature_space="landmark"):
         rids = parse_condition(rid)
         CONDITIONS.append("rid in UNNEST({})".format(list(rids)))
     else:
-<<<<<<< HEAD
-        config = cfg.get_default_config()
-        gene_table = config.tables.geneinfo
-        if feature_space in ["landmark", "bing", "aig"]:
-            if feature_space == "landmark":
-               features_list = ['landmark']
-            elif feature_space == "bing":
-                features_list = ['landmark', 'best inferred']
-            elif feature_space == 'aig':
-                features_list = ['landmark', 'best inferred', 'inferred']
-            else:
-                print("feature space {} unknown. Choices ['landmark', 'bing', 'aig']")
-                sys.exit(1)
-
-            CONDITIONS.append(
-                (
-                "rid in (SELECT CAST(gene_id AS STRING) "
-                "FROM `{}` "
-                "WHERE feature_space in UNNEST({}))"
-                ).format(gene_table, features_list)
-            )
-        else:
-            print("feature space {} unknown. Choices ['landmark', 'bing', 'aig']")
-            sys.exit(1)
-=======
         CONDITIONS.append(_get_feature_space_condition(feature_space))
->>>>>>> develop
 
     if cid:
         cids = parse_condition(cid)
@@ -920,12 +869,7 @@ def fmt_size(num, suffix='B'):
         num /= 1024.0
     return "%.1f%s%s" % (num, 'Yi', suffix)
 
-<<<<<<< HEAD
-
-def _build_and_launch_query(client, table_id, cid=None, rid=None, feature_space="landmark",  verbose=False):
-=======
 def _build_and_launch_query(client, table_id, cid=None, rid=None, feature_space="landmark", verbose=False):
->>>>>>> develop
     """
     Crafts and retrieves query from rid and cid conditions. Uses pandas GBQ read_gbq
     to download records from BigQuery as a dataframe object.
@@ -984,20 +928,7 @@ def run_query(client, query):
     :param query: Query to run as a string
     :return: QueryJob object
     """
-<<<<<<< HEAD
-    config = cfg.get_default_config()
-    compoundinfo_table = config.tables.compoundinfo
-
-    QUERY = ( 'SELECT moa, ' 
-    'COUNT(DISTINCT(pert_id)) AS count ' 
-    'FROM `{}` ' 
-    'GROUP BY moa')
-
-    QUERY = QUERY.format(compoundinfo_table)
-    return run_query(QUERY, client).result().to_dataframe()
-=======
     return client.query(query)
->>>>>>> develop
 
 
 def _run_query_create_log(query, client, destination_table=None):
@@ -1008,20 +939,6 @@ def _run_query_create_log(query, client, destination_table=None):
     :param client: BigQuery client object
     :return: QueryJob object
     """
-<<<<<<< HEAD
-    config = cfg.get_default_config()
-    compoundinfo_table = config.tables.compoundinfo
-
-    QUERY = ( 'SELECT target, ' 
-    'COUNT(DISTINCT(pert_id)) AS count ' 
-    'FROM `{}` ' 
-    'GROUP BY target')
-
-    QUERY = QUERY.format(compoundinfo_table)
-
-    return run_query(QUERY, client).result().to_dataframe()
-=======
->>>>>>> develop
 
     # Job config
     job_config = bigquery.QueryJobConfig()
