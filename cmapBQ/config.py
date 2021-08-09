@@ -16,8 +16,18 @@ class TableDirectory:
     instinfo: str
     siginfo: str
     level3: str
+    level3_rid: str
+    level3_landmark: str
     level4: str
+    level4_rid: str
+    level4_landmark: str
     level5: str
+    level5_rid: str
+    level5_landmark: str
+
+
+    def _includes_clustered_tables(self):
+        return self.level3_rid
 
     def __str__(self):
         tables = ["{}: {}".format(attr, getattr(self, attr)) for attr in dir(self) if not attr.startswith('__')]
@@ -26,6 +36,9 @@ class TableDirectory:
 
 @dataclass
 class Configuration:
+    """
+    Data class for configuration of cmapBQ. Object for config.txt
+    """
     credentials: str
     tables: TableDirectory
 
@@ -33,9 +46,15 @@ def _write_default_config(path):
     default_config = {
         "credentials": "PATH TO CREDENTIALS",
         "tables": {
-            "level3": "cmap-big-table.cmap_lincs_public_views.L1000_Level3",
-            "level4": "cmap-big-table.cmap_lincs_public_views.L1000_Level4",
-            "level5": "cmap-big-table.cmap_lincs_public_views.L1000_Level5",
+            "level3": "cmap-big-table.cmap_lincs_public_views.L1000_Level3_cid",
+            "level3_rid": "cmap-big-table.cmap_lincs_public_views.L1000_Level3_rid",
+            "level3_landmark": "cmap-big-table.cmap_lincs_public_views.L1000_Level3_landmark",
+            "level4": "cmap-big-table.cmap_lincs_public_views.L1000_Level4_cid",
+            "level4_rid": "cmap-big-table.cmap_lincs_public_views.L1000_Level4_rid",
+            "level4_landmark": "cmap-big-table.cmap_lincs_public_views.L1000_Level4_landmark",
+            "level5": "cmap-big-table.cmap_lincs_public_views.L1000_Level5_cid",
+            "level5_rid": "cmap-big-table.cmap_lincs_public_views.L1000_Level5_rid",
+            "level5_landmark": "cmap-big-table.cmap_lincs_public_views.L1000_Level5_landmark",
             "siginfo": "cmap-big-table.cmap_lincs_public_views.siginfo",
             "instinfo": "cmap-big-table.cmap_lincs_public_views.instinfo",
             "compoundinfo": "cmap-big-table.cmap_lincs_public_views.compoundinfo",
@@ -51,6 +70,13 @@ def _write_default_config(path):
 
 
 def setup_credentials(path_to_credentials):
+    """
+    Setup script for pointing config.txt to a GOOGLE_APPLICATION_CREDENTIALS JSON key.
+    Writes default tables if ~/.cmapBQ/config.txt does not exist.
+
+    :param path_to_credentials:
+    :return: None (side effect)
+    """
     config_path = _get_config_path()
     if not os.path.exists(config_path):
         _write_default_config(config_path)
@@ -83,21 +109,46 @@ def _get_config_path():
 
 
 def get_default_config():
+    """
+    Get configuration object from reading ~/.cmapBQ/config.txt
+
+    :return: cmapBQ.config.Configuration class.
+    """
     config_path = _get_config_path()
 
     try:
         return _load_config(config_path)
+    except dacite.MissingValueError as mv:
+        print("Current config is missing values, updating automatically...")
+        #Updates older config files to have the current version of default table addresses.
+        try:
+            with open(config_path, "r") as ymlfile:
+                cfg = yaml.safe_load(ymlfile)
+
+            cred_path_old = cfg['credentials']
+
+            os.remove(config_path)
+            setup_credentials(cred_path_old) #reinstate config file
+            return _load_config(config_path)
+        except KeyError:
+            print(
+                "Credentials field missing from file: ~/.cmapBQ/config.txt and is corrupted. Delete file and run " +
+                "setup_credentials(path_to_google_credentials)"
+            )
+        except FileNotFoundError:
+            print(
+                "Credentials file not found in: ~/.cmapBQ/config.txt. Check that file exists. Alternatively, run " +
+                "setup_credentials(path_to_google_credentials)"
+            )
     except FileNotFoundError as f:
         print(
             "Credentials file not found in: ~/.cmapBQ/config.txt. Check that file exists. Alternatively, run " +
             "setup_credentials(path_to_google_credentials)"
         )
 
-        sys_exit = sys.exit(1)
-
-
 def _load_config(config_path):
-    """ Read in config file
+    """
+    Read in config file
     :param config_path: path to YAML config file
     :return: Configuration Dataclass
     """
@@ -110,7 +161,8 @@ def _load_config(config_path):
 
 def set_default_config(input_config_path):
     """
-    Change configuration in ~/.cmapBQ to input config path
+    Change configuration in ~/.cmapBQ to input config path. Overwrites ~/.cmapBQ/config.txt.,
+
     :param input_config_path: valid YAML formatted config file
     :return: location in ~/.cmapBQ
     """
@@ -128,6 +180,7 @@ def set_default_config(input_config_path):
 def get_bq_client(config=None):
     """
     Return authenticated BigQuery client object.
+
     :param config: optional path to config if not default
     :return: BigQuery Client
     """
