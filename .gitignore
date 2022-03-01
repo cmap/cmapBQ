@@ -202,3 +202,6 @@ dmypy.json
 
 # Pyre type checker
 .pyre/
+
+#Pipefile
+Pipfile.lock 

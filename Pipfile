@@ -4,7 +4,7 @@ url = "https://pypi.org/simple"
 verify_ssl = true
 
 [dev-packages]
-ipython = "*"
+ipython = ">=7.31.1"
 
 [packages]
 pandas = "*"
@@ -15,3 +15,4 @@ cmappy = "*"
 pyyaml = "*"
 dacite = "*"
 jupyter = "*"
+notebook = ">=6.4.1"
